@@ -34,6 +34,7 @@ export const confirmPayment = async (req, res) => {
       },
       tls: { rejectUnauthorized: false },
     });
+    
 
     await transporter.sendMail({
       from: `"Vision Africa School Debate 2026" <${process.env.SMTP_USER}>`,
@@ -62,6 +63,8 @@ export const confirmPayment = async (req, res) => {
     });
   }
 };
+
+
 
 /* ==============================
    GET ALL REGISTRATIONS
@@ -118,9 +121,13 @@ export const updateSchoolStatus = async (req, res) => {
   }
 };
 
+
 /* ==============================
-   DELETE SCHOOL
+   DELETE SCHOOL (with file cleanup)
 ============================== */
+import fs from "fs";
+import path from "path";
+
 export const deleteSchool = async (req, res) => {
   try {
     const { id } = req.params;
@@ -130,15 +137,36 @@ export const deleteSchool = async (req, res) => {
       return res.status(404).json({ message: "School not found" });
     }
 
+    // 🧹 Define helper to safely delete a file if it exists
+    const deleteFileIfExists = (filePath) => {
+      if (!filePath) return;
+      const fullPath = path.join(process.cwd(), filePath.replace(/\\/g, "/"));
+      fs.unlink(fullPath, (err) => {
+        if (err && err.code !== "ENOENT") {
+          console.error("⚠️ Error deleting file:", fullPath, err.message);
+        } else {
+          console.log(`🗑️ Deleted file: ${fullPath}`);
+        }
+      });
+    };
+
+    // 🧾 Delete logo and receipt if they exist
+    deleteFileIfExists(registration.logo);
+    deleteFileIfExists(registration.receipt);
+
+    // 🧠 Delete from database
     await registration.deleteOne();
-    res.status(200).json({ message: "School deleted successfully" });
+
+    res.status(200).json({ message: "✅ School and related files deleted successfully." });
   } catch (error) {
+    console.error("❌ Error deleting school:", error);
     res.status(500).json({
       message: "Error deleting school",
       error: error.message,
     });
   }
 };
+
 
 /* ==============================
    SIMPLE PAYMENT CONFIRMATION STATUS
@@ -169,6 +197,21 @@ export const sendEmail = async (req, res) => {
 
     if (!email || !subject || !message) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // 🔍 Log environment details for debugging
+    console.log("📧 SMTP config:", {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      user: process.env.SMTP_USER,
+      secure: process.env.SMTP_SECURE,
+    });
+
+    // 🧠 Check if all SMTP credentials exist
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      return res.status(500).json({
+        message: "SMTP credentials are missing. Please verify .env configuration.",
+      });
     }
 
     const transporter = nodemailer.createTransport({

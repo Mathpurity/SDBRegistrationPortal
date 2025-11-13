@@ -29,6 +29,37 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
+  // ✅ Auto logout after 5 minutes of inactivity
+  useEffect(() => {
+    let logoutTimer;
+    const resetTimer = () => {
+      clearTimeout(logoutTimer);
+      logoutTimer = setTimeout(() => {
+        localStorage.removeItem("adminToken");
+        Swal.fire({
+          icon: "info",
+          title: "Session Expired",
+          text: "You were logged out due to 5 minutes of inactivity.",
+          confirmButtonColor: "#2563EB",
+        }).then(() => {
+          window.location.href = "/admin-login";
+        });
+      }, 5 * 60 * 1000); // 5 minutes
+    };
+
+
+     // Listen for user activity
+    const events = ["mousemove", "keydown", "click", "scroll"];
+    events.forEach((event) => window.addEventListener(event, resetTimer));
+
+    resetTimer(); // Initialize timer
+
+    return () => {
+      clearTimeout(logoutTimer);
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, []);
+
   // ✅ Logout Confirmation
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -136,20 +167,19 @@ export default function AdminDashboard() {
   const fallbackReceipt =
     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjgwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGRkZGQiLz48dGV4dCB4PSI1MCIgeT0iNDQiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2NjYiPlJlY2VpcHQgTWlzc2luZzwvdGV4dD48L3N2Zz4=";
 
-  const getFullImageUrl = (path, fallback) => {
+ const getFullImageUrl = (path, fallback) => {
   if (!path) return fallback;
 
   // Normalize Windows-style backslashes
   const normalizedPath = path.replace(/\\/g, "/");
 
-  // ✅ Ensure "uploads/" prefix exists
-  const cleanPath = normalizedPath.includes("uploads/")
-    ? normalizedPath
-    : `uploads/${normalizedPath.split("/").pop()}`;
+  // ✅ Remove any accidental double slashes
+  const cleanPath = normalizedPath.replace(/^\/+/, "");
 
-  // ✅ Construct correct full URL
+  // ✅ Ensure full URL without double slashes
   return `http://localhost:5000/${cleanPath}`;
 };
+
 
 
 // ✅ Send Email with Feedback (No Attachment)
@@ -178,18 +208,6 @@ const handleSendEmail = async (school) => {
           <li><strong>Phone:</strong> ${school.phone}</li>
           <li><strong>State:</strong> ${school.state}</li>
           <li><strong>Address:</strong> ${school.address}</li>
-          <li><strong>Date of Registration:</strong> ${new Date(
-            school.createdAt
-          ).toLocaleDateString()}</li>
-          <li><strong>Status:</strong> 
-            ${
-              school.status === "approved"
-                ? '<span style="color: green;">✅ Approved</span>'
-                : school.status === "rejected"
-                ? '<span style="color: red;">❌ Rejected</span>'
-                : '<span style="color: orange;">⏳ Pending</span>'
-            }
-          </li>
         </ul>
 
         <p>Please keep your <strong>registration number</strong> safe — it will be required for future verification.</p>
@@ -312,7 +330,6 @@ const handleSendEmail = async (school) => {
                 <th className="p-2 border">State</th>
                 <th className="p-2 border">Status</th>
                 <th className="p-2 border">Receipt</th>
-                <th className="p-2 border">School Address</th>
                 <th className="p-2 border">Actions</th>
               </tr>
             </thead>
@@ -344,8 +361,9 @@ const handleSendEmail = async (school) => {
                       <td className="p-2 border">{school.schoolName || "N/A"}</td>
                       <td className="p-2 border">{school.coachName || "N/A"}</td>
                       <td className="p-2 border">{school.email || "N/A"}</td>
-                      <td className="p-2 border">{school.phone || "N/A"}</td>
-                      <td className="p-2 border">{school.address || "N/A"}</td>
+                       <td className="p-2 border">{school.phone || "N/A"}</td>
+                      <td className="p-2 border">{school.state || "N/A"}</td>
+                     
                       <td
                         className={`p-2 border font-semibold ${
                           statusLower === "approved"
@@ -368,47 +386,47 @@ const handleSendEmail = async (school) => {
                           {school.receipt ? "View" : "No Receipt"}
                         </button>
                       </td>
-                      <td className="p-2 border space-x-2">
-                     
-                      </td>
-                      <td className="p-2 border space-x-2">
-                           {statusLower === "pending" && (
-                          <>
-                            <button
-                              onClick={() => handleStatusChange(school._id, "Approved")}
-                              className="bg-green-600 text-white px-2 py-1 rounded"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleStatusChange(school._id, "Disapproved")}
-                              className="bg-red-600 text-white px-2 py-1 rounded"
-                            >
-                              Disapprove
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => handlePrintSingle(school)}
-                          className="bg-gray-700 text-white px-2 py-1 rounded"
-                        >
-                          Print
-                        </button>
-                        <button
-                          onClick={() => handleSendEmail(school)}
-                          className="bg-indigo-600 text-white px-2 py-1 rounded"
-                        >
-                          Email
-                        </button>
-                        {(statusLower === "approved" || statusLower === "disapproved") && (
+                     <td className="p-2 border">
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {statusLower === "pending" && (
+                            <>
+                              <button
+                                onClick={() => handleStatusChange(school._id, "Approved")}
+                                className="bg-green-600 text-white px-2 py-1 rounded"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(school._id, "Disapproved")}
+                                className="bg-red-600 text-white px-2 py-1 rounded"
+                              >
+                                Disapprove
+                              </button>
+                            </>
+                          )}
                           <button
-                            onClick={() => handleDelete(school._id)}
-                            className="bg-red-700 text-white px-2 py-1 rounded"
+                            onClick={() => handlePrintSingle(school)}
+                            className="bg-gray-700 text-white px-2 py-1 rounded"
                           >
-                            Delete
+                            Print
                           </button>
-                        )}
+                          <button
+                            onClick={() => handleSendEmail(school)}
+                            className="bg-indigo-600 text-white px-2 py-1 rounded"
+                          >
+                            Email
+                          </button>
+                          {(statusLower === "approved" || statusLower === "disapproved") && (
+                            <button
+                              onClick={() => handleDelete(school._id)}
+                              className="bg-red-700 text-white px-2 py-1 rounded"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
                       </td>
+
                     </tr>
                   );
                 })

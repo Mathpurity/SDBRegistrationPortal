@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const Confirmation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const regNumber = location.state?.regNumber || "Unavailable";
 
   useEffect(() => {
@@ -18,7 +19,14 @@ const Confirmation = () => {
       confirmButtonColor: "#2563EB",
       confirmButtonText: "OK",
     });
-  }, [regNumber]);
+
+    // ✅ Redirect to registration page after 3 seconds
+    const timer = setTimeout(() => {
+      navigate("/register");
+    }, 3000);
+
+    return () => clearTimeout(timer); // cleanup
+  }, [regNumber, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

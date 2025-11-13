@@ -16,12 +16,43 @@ export default function Register() {
   });
   const [logo, setLogo] = useState(null);
   const [receipt, setReceipt] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // ✅ 2MB limit
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+  const handleFileUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (file && file.size > MAX_FILE_SIZE) {
+      Swal.fire({
+        title: "File Too Large ⚠️",
+        text: `${file.name} exceeds the 2MB upload limit.`,
+        icon: "warning",
+        confirmButtonColor: "#f59e0b",
+      });
+      e.target.value = ""; // Clear invalid file
+      return;
+    }
+
+    if (type === "logo") setLogo(file);
+    else if (type === "receipt") setReceipt(file);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Check for missing required fields before submission
+    // ✅ Basic validation for email and phone
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      Swal.fire("Invalid Email", "Please enter a valid email address.", "warning");
+      return;
+    }
+
+    if (!/^\d{10,15}$/.test(form.phone)) {
+      Swal.fire("Invalid Phone Number", "Enter a valid phone number (10–15 digits).", "warning");
+      return;
+    }
+
     const missingFields = Object.entries(form)
       .filter(([key, value]) => !value.trim())
       .map(([key]) => key);
@@ -36,11 +67,7 @@ export default function Register() {
               ? `<p><strong>Missing:</strong> ${missingFields.join(", ")}</p>`
               : ""
           }
-          ${
-            !logo
-              ? "<p><strong>Missing:</strong> School Logo upload</p>"
-              : ""
-          }
+          ${!logo ? "<p><strong>Missing:</strong> School Logo upload</p>" : ""}
           ${
             !receipt
               ? "<p><strong>Missing:</strong> Payment Receipt upload</p>"
@@ -50,7 +77,7 @@ export default function Register() {
         icon: "warning",
         confirmButtonColor: "#f59e0b",
       });
-      return; // ❌ Stop submission
+      return;
     }
 
     const data = new FormData();
@@ -59,8 +86,9 @@ export default function Register() {
     data.append("receipt", receipt);
 
     try {
+      setIsSubmitting(true); // 🔒 Disable submit
       const res = await axios.post(
-        "http://localhost:5000/api/registration/register",
+        `${API_URL}/api/registration/register`,
         data,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -93,122 +121,144 @@ export default function Register() {
         icon: "error",
         confirmButtonColor: "#DC2626",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <>
-      
-      <div className="max-w-md mx-auto p-6 bg-white shadow-md rounded-xl mt-10">
-        <h2 className="text-2xl font-bold mb-4 text-center">
-          Debate Registration
-        </h2>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md sm:max-w-lg lg:max-w-xl bg-white p-6 sm:p-8 shadow-lg rounded-2xl mt-10 mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-blue-700">
+            Debate Registration
+          </h2>
 
-        <form onSubmit={handleSubmit}>
-          {/* School Info */}
-          <input
-            type="text"
-            placeholder="School Name"
-            className="w-full p-2 mb-2 border rounded"
-            onChange={(e) => setForm({ ...form, schoolName: e.target.value })}
-            
-          />
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            {/* School Info */}
+            <input
+              type="text"
+              placeholder="School Name"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, schoolName: e.target.value })}
+            />
 
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-2 mb-2 border rounded"
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            
-          />
+            <input
+              type="email"
+              placeholder="Email"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
 
-          <input
-            type="text"
-            placeholder="Phone Number"
-            className="w-full p-2 mb-2 border rounded"
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            
-          />
+            <input
+              type="text"
+              placeholder="Phone Number"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
 
-          <input
-            type="text"
-            placeholder="School Address"
-            className="w-full p-2 mb-2 border rounded"
-            onChange={(e) => setForm({ ...form, address: e.target.value })}
-            
-          />
+            <input
+              type="text"
+              placeholder="School Address"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
 
-          <input
-            type="text"
-            placeholder="State"
-            className="w-full p-2 mb-2 border rounded"
-            onChange={(e) => setForm({ ...form, state: e.target.value })}
-            
-          />
+            <input
+              type="text"
+              placeholder="State"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, state: e.target.value })}
+            />
 
-          {/* Coach Info */}
-          <input
-            type="text"
-            placeholder="Name of Debater Coach"
-            className="w-full p-2 mb-2 border rounded"
-            onChange={(e) => setForm({ ...form, coachName: e.target.value })}
-            
-          />
+            {/* Coach Info */}
+            <input
+              type="text"
+              placeholder="Name of Debater Coach"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, coachName: e.target.value })}
+            />
 
-          {/* Reason for Participation */}
-          <textarea
-            placeholder="Why do you want to participate in this debate?"
-            className="w-full p-2 mb-3 border rounded"
-            rows="3"
-            onChange={(e) => setForm({ ...form, reason: e.target.value })}
-            
-          ></textarea>
+            {/* Reason for Participation */}
+            <textarea
+              placeholder="Why do you want to participate in this debate?"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              rows="3"
+              onChange={(e) => setForm({ ...form, reason: e.target.value })}
+            ></textarea>
 
-          {/* Account Info */}
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mb-4 text-center">
-            <p className="font-semibold text-blue-800">PAYMENT DETAILS</p>
-            <p className="text-sm">
-              Account Name: <span className="font-medium">Vision Africa Radio</span>
+            {/* Account Info */}
+            <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200 text-center">
+              <p className="font-semibold text-blue-800 text-sm sm:text-base">
+                PAYMENT DETAILS
+              </p>
+              <p className="text-xs sm:text-sm">
+                Account Name:{" "}
+                <span className="font-medium">Vision Africa Radio</span>
+              </p>
+              <p className="text-xs sm:text-sm">
+                Account Number: <span className="font-medium">4090947228</span>
+              </p>
+              <p className="text-xs sm:text-sm">
+                Bank: <span className="font-medium">Polaris Bank</span>
+              </p>
+            </div>
+
+            <p className="text-center text-red-600 font-semibold text-xs sm:text-sm mb-2 animate-pulse">
+              ⚠️ No refund after payment!
             </p>
-            <p className="text-sm">
-              Account Number: <span className="font-medium">4090947228</span>
-            </p>
-            <p className="text-sm">
-              Bank: <span className="font-medium">Polaris Bank</span>
-            </p>
-          </div>
 
-          <p className="text-center text-red-600 font-semibold mb-4 animate-flash">
-            ⚠️ No refund after payment!
-          </p>
+            {/* Upload Logo */}
+            <div>
+              <label className="block mb-1 font-medium text-sm sm:text-base">
+                Upload School Logo:
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-full text-sm sm:text-base"
+                onChange={(e) => handleFileUpload(e, "logo")}
+              />
+              {/* ✅ Logo Preview */}
+              {logo && (
+                <img
+                  src={URL.createObjectURL(logo)}
+                  alt="Logo preview"
+                  className="mt-2 w-24 h-24 object-contain rounded-lg border"
+                />
+              )}
+            </div>
 
-          {/* Upload Logo */}
-          <label className="block mb-1 font-medium">Upload School Logo:</label>
-          <input
-            type="file"
-            accept="image/*"
-            className="w-full mb-3"
-            onChange={(e) => setLogo(e.target.files[0])}
-            
-          />
+            {/* Upload Receipt */}
+            <div>
+              <label className="block mb-1 font-medium text-sm sm:text-base">
+                Upload Payment Receipt:
+              </label>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                className="w-full text-sm sm:text-base"
+                onChange={(e) => handleFileUpload(e, "receipt")}
+              />
+              {receipt && (
+                <p className="mt-1 text-sm text-green-600">Receipt file ready ✅</p>
+              )}
+            </div>
 
-          {/* Upload Receipt */}
-          <label className="block mb-1 font-medium">Upload Payment Receipt:</label>
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            className="w-full mb-3"
-            onChange={(e) => setReceipt(e.target.files[0])}
-            
-          />
-
-          <button
-            type="submit"
-            className="bg-blue-600 text-white w-full py-2 rounded-xl hover:bg-blue-700 transition"
-          >
-            Register
-          </button>
-        </form>
+            {/* ✅ Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full py-2 sm:py-3 rounded-xl text-white font-medium text-sm sm:text-base transition ${
+                isSubmitting
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {isSubmitting ? "Registering..." : "Register"}
+            </button>
+          </form>
+        </div>
       </div>
       <Footer />
     </>

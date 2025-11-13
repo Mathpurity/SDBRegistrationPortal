@@ -5,6 +5,7 @@ import {
   confirmPayment,
   updateSchoolStatus,
   deleteSchool,
+  sendEmail, // ✅ kept intact
 } from "../controllers/adminController.js";
 import protect from "../middleware/authMiddleware.js";
 
@@ -17,15 +18,12 @@ router.post("/login", loginAdmin);
 router.get("/registrations", protect, getAllRegistration);
 router.put("/confirm/:id", protect, confirmPayment);
 
-
-// ✅ Dashboard functionality
-router.get("/schools", protect, getAllRegistration); // replaced getAllSchools
+// ✅ Dashboard Management Routes
+router.get("/schools", protect, getAllRegistration);
 router.put("/schools/status/:id", protect, updateSchoolStatus);
 router.delete("/schools/:id", protect, deleteSchool);
 
-// ✅ Send Email (No Attachment)
-import { sendEmail } from "../controllers/adminController.js";
-
+// ✅ Email Sending Route (No Attachments)
 router.post("/send-email", protect, sendEmail);
 
 export default router;

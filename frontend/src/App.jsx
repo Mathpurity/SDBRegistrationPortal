@@ -19,6 +19,7 @@ function App() {
         <Routes>
   <Route path="/" element={<Register />} />
   <Route path="/confirmation" element={<Confirmation />} />
+  <Route path="/register" element={<Register />} />
   <Route path="/admin-login" element={<AdminLogin />} />
   
   {/* Redirect /admin to /admin/dashboard */}
