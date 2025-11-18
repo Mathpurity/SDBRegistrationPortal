@@ -12,7 +12,7 @@ import nodemailer from "nodemailer"; // 🔹 Add this for testing email setup
 dotenv.config();
 connectDB();
 
-// 🔹 Add this at the top AFTER dotenv.config()
+
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
@@ -35,7 +35,7 @@ app.use(
   })
 );
 
-// 🔹 Serve frontend in production (optional, if you want to host frontend from backend)
+// 🔹 Serve frontend in production
 if (process.env.NODE_ENV === "production") {
   const frontendBuildPath = path.join(__dirname, "../frontend/build");
   app.use(express.static(frontendBuildPath));
