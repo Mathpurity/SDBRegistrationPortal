@@ -1,4 +1,5 @@
 import express from "express";
+import protect from "../middleware/authMiddleware.js";
 import { loginAdmin } from "../controllers/authController.js";
 import {
   getAllRegistration,
