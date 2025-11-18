@@ -12,6 +12,39 @@ import nodemailer from "nodemailer"; // 🔹 Add this for testing email setup
 dotenv.config();
 connectDB();
 
+// 🔹 Add this at the top AFTER dotenv.config()
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.FRONTEND_URL, // ✅ Add your deployed frontend URL here
+];
+
+// 🔹 Update CORS to use dynamic origin checking
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `❌ The CORS policy for this site does not allow access from the specified Origin.`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
+
+// 🔹 Serve frontend in production (optional, if you want to host frontend from backend)
+if (process.env.NODE_ENV === "production") {
+  const frontendBuildPath = path.join(__dirname, "../frontend/build");
+  app.use(express.static(frontendBuildPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, "index.html"));
+  });
+}
+
+
 const app = express();
 
 // ✅ Directory setup
