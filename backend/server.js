@@ -23,19 +23,19 @@ const uploadsDir = path.join(__dirname, "uploads");
 // Ensure 'uploads' folder exists
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-// 🔹 CORS allowed origins
 const allowedOrigins = [
+  "https://your-frontend-url.onrender.com", // add this
   "http://localhost:5173",
   "http://localhost:3000",
-  process.env.FRONTEND_URL, // Add your deployed frontend URL
 ];
 
-// 🔹 Update CORS to use dynamic origin checking
+
+// 🔹 CORS middleware with dynamic origin checking
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
+      if (!allowedOrigins.includes(origin)) {
         const msg = `❌ The CORS policy for this site does not allow access from the specified Origin.`;
         return callback(new Error(msg), false);
       }
@@ -44,15 +44,6 @@ app.use(
     credentials: true,
   })
 );
-
-// 🔹 Serve frontend in production
-if (process.env.NODE_ENV === "production") {
-  const frontendBuildPath = path.join(__dirname, "../frontend/build");
-  app.use(express.static(frontendBuildPath));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendBuildPath, "index.html"));
-  });
-}
 
 // Parse JSON & URL-encoded data
 app.use(express.json());
@@ -72,6 +63,24 @@ app.use(
 // Routes
 app.use("/api/registration", registrationRoutes);
 app.use("/api/admin", adminRoutes);
+
+// 🔹 Serve frontend in production (Vite)
+if (process.env.NODE_ENV === "production") {
+  const frontendDistPath = path.join(__dirname, "../frontend/dist");
+
+  // Serve static frontend files
+  app.use(express.static(frontendDistPath));
+
+  // Catch-all route for SPA (React Router)
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      res.sendFile(path.join(frontendDistPath, "index.html"));
+    } else {
+      next();
+    }
+  });
+}
+
 
 // Root route
 app.get("/", (req, res) => res.send("🚀 Server running successfully"));

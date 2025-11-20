@@ -7,13 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
-  
-  "scripts": {
-  "start": "node server.js"
-},
-
   "dependencies": {
     "@shadcn/ui": "^0.0.4",
     "axios": "^1.12.2",
