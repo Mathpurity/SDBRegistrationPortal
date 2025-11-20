@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
+import os from "os"; // ES Module import
 import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import registrationRoutes from "./routes/registrationRoutes.js";
@@ -12,29 +13,30 @@ import nodemailer from "nodemailer";
 dotenv.config();
 connectDB();
 
-// ✅ Initialize app BEFORE using it
 const app = express();
 
+// ------------------------
 // Directory setup
+// ------------------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, "uploads");
 
-// Ensure 'uploads' folder exists
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
+// ------------------------
+// Allowed origins for CORS
+// ------------------------
 const allowedOrigins = [
-  "https://your-frontend-url.onrender.com", // add this
-  "http://localhost:5173",
-  "http://localhost:3000",
+  process.env.FRONTEND_URL, // Production frontend (Bluehost)
+  "http://localhost:5173",   // Vite dev
+  "http://localhost:3000",   // Optional dev port
 ];
 
-
-// 🔹 CORS middleware with dynamic origin checking
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // allow Postman or mobile apps
       if (!allowedOrigins.includes(origin)) {
         const msg = `❌ The CORS policy for this site does not allow access from the specified Origin.`;
         return callback(new Error(msg), false);
@@ -45,11 +47,15 @@ app.use(
   })
 );
 
-// Parse JSON & URL-encoded data
+// ------------------------
+// Parse JSON & URL-encoded
+// ------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files with proper CORS headers
+// ------------------------
+// Serve uploads
+// ------------------------
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -60,18 +66,19 @@ app.use(
   express.static(uploadsDir)
 );
 
+// ------------------------
 // Routes
+// ------------------------
 app.use("/api/registration", registrationRoutes);
 app.use("/api/admin", adminRoutes);
 
-// 🔹 Serve frontend in production (Vite)
+// ------------------------
+// Serve frontend in production
+// ------------------------
 if (process.env.NODE_ENV === "production") {
   const frontendDistPath = path.join(__dirname, "../frontend/dist");
-
-  // Serve static frontend files
   app.use(express.static(frontendDistPath));
 
-  // Catch-all route for SPA (React Router)
   app.use((req, res, next) => {
     if (req.method === "GET" && !req.path.startsWith("/api")) {
       res.sendFile(path.join(frontendDistPath, "index.html"));
@@ -81,23 +88,29 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-
+// ------------------------
 // Root route
+// ------------------------
 app.get("/", (req, res) => res.send("🚀 Server running successfully"));
 
-// PORT
-const PORT = process.env.PORT || 5000;
-
-// Upload test route
+// ------------------------
+// Uploads test route
+// ------------------------
 app.get("/uploads-check", (req, res) => {
+  const host = process.env.NODE_ENV === "production"
+    ? new URL(process.env.VITE_API_URL).host // Render backend host in production
+    : `localhost:${process.env.PORT || 5000}`;
+
   res.json({
     message: "Uploads folder served successfully",
     uploadsDir,
-    testImageExample: `http://localhost:${PORT}/uploads/example.png`,
+    testImageExample: `http://${host}/uploads/example.png`,
   });
 });
 
+// ------------------------
 // Email test route
+// ------------------------
 app.get("/test-email", async (req, res) => {
   try {
     const transporter = nodemailer.createTransport({
@@ -128,11 +141,22 @@ app.get("/test-email", async (req, res) => {
   }
 });
 
-// Handle 404s
+// ------------------------
+// 404 handler
+// ------------------------
 app.use((req, res) => res.status(404).json({ message: "❌ Route not found" }));
 
+// ------------------------
 // Start server
+// ------------------------
+const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running at: http://localhost:${PORT}`);
-  console.log(`📂 Uploads available at: http://localhost:${PORT}/uploads`);
+
+  const host = process.env.NODE_ENV === "production"
+    ? new URL(process.env.VITE_API_URL).host
+    : `localhost:${PORT}`;
+
+  console.log(`📂 Uploads available at: http://${host}/uploads`);
 });
