@@ -12,6 +12,7 @@ import nodemailer from "nodemailer";
 dotenv.config();
 connectDB();
 
+// ✅ Initialize app BEFORE using it
 const app = express();
 
 // Directory setup
@@ -22,13 +23,36 @@ const uploadsDir = path.join(__dirname, "uploads");
 // Ensure 'uploads' folder exists
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-// Enable CORS
+// 🔹 CORS allowed origins
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.FRONTEND_URL, // Add your deployed frontend URL
+];
+
+// 🔹 Update CORS to use dynamic origin checking
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `❌ The CORS policy for this site does not allow access from the specified Origin.`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
+
+// 🔹 Serve frontend in production
+if (process.env.NODE_ENV === "production") {
+  const frontendBuildPath = path.join(__dirname, "../frontend/build");
+  app.use(express.static(frontendBuildPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, "index.html"));
+  });
+}
 
 // Parse JSON & URL-encoded data
 app.use(express.json());
@@ -64,13 +88,13 @@ app.get("/uploads-check", (req, res) => {
   });
 });
 
-// Email test route — corrected transport
+// Email test route
 app.get("/test-email", async (req, res) => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 5000,
-      secure: process.env.SMTP_SECURE === "true", // Convert string to boolean
+      secure: process.env.SMTP_SECURE === "true",
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
