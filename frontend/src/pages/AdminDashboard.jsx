@@ -167,18 +167,23 @@ export default function AdminDashboard() {
   const fallbackReceipt =
     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjgwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iODAiIGZpbGw9IiNkZGRkZGQiLz48dGV4dCB4PSI1MCIgeT0iNDQiIGZvbnQtc2l6ZT0iMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2NjYiPlJlY2VpcHQgTWlzc2luZzwvdGV4dD48L3N2Zz4=";
 
- const getFullImageUrl = (path, fallback) => {
+const getFullImageUrl = (path, fallback) => {
   if (!path) return fallback;
 
   // Normalize Windows-style backslashes
-  const normalizedPath = path.replace(/\\/g, "/");
+  let normalizedPath = path.replace(/\\/g, "/");
 
-  // ✅ Remove any accidental double slashes
-  const cleanPath = normalizedPath.replace(/^\/+/, "");
+  // Remove all leading slashes to prevent double slashes
+  normalizedPath = normalizedPath.replace(/^\/+/, "");
 
-  // ✅ Ensure full URL without double slashes
-  return `http://localhost:5000/${cleanPath}`;
+  // Ensure 'uploads/' is included exactly once
+  if (!normalizedPath.startsWith("uploads/")) {
+    normalizedPath = `uploads/${normalizedPath}`;
+  }
+
+  return `http://localhost:5000/${normalizedPath}`;
 };
+
 
 
 

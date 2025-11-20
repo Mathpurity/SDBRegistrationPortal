@@ -7,22 +7,22 @@ import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import registrationRoutes from "./routes/registrationRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
-import nodemailer from "nodemailer"; // 🔹 Add this for testing email setup
+import nodemailer from "nodemailer";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// ✅ Directory setup
+// Directory setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, "uploads");
 
-// ✅ Ensure 'uploads' folder exists
+// Ensure 'uploads' folder exists
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-// ✅ Enable CORS
+// Enable CORS
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://localhost:3000"],
@@ -30,11 +30,11 @@ app.use(
   })
 );
 
-// ✅ Parse JSON & form data
+// Parse JSON & URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Serve uploaded files with correct CORS headers
+// Serve uploaded files with proper CORS headers
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -45,17 +45,17 @@ app.use(
   express.static(uploadsDir)
 );
 
-// ✅ Routes
+// Routes
 app.use("/api/registration", registrationRoutes);
 app.use("/api/admin", adminRoutes);
 
-// ✅ Root route
+// Root route
 app.get("/", (req, res) => res.send("🚀 Server running successfully"));
 
-// ✅ Define PORT early so it's available globally
+// PORT
 const PORT = process.env.PORT || 5000;
 
-// ✅ Test route for uploads
+// Upload test route
 app.get("/uploads-check", (req, res) => {
   res.json({
     message: "Uploads folder served successfully",
@@ -64,20 +64,22 @@ app.get("/uploads-check", (req, res) => {
   });
 });
 
-// 🔹 Add this test route for verifying email credentials
+// Email test route — corrected transport
 app.get("/test-email", async (req, res) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 5000,
+      secure: process.env.SMTP_SECURE === "true", // Convert string to boolean
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
       },
     });
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
+      from: process.env.SMTP_USER,
+      to: process.env.SMTP_USER,
       subject: "✅ Vision Africa Email Test",
       text: "If you received this, your email setup works perfectly!",
     });
@@ -93,10 +95,10 @@ app.get("/test-email", async (req, res) => {
   }
 });
 
-// ✅ Handle 404s
+// Handle 404s
 app.use((req, res) => res.status(404).json({ message: "❌ Route not found" }));
 
-// ✅ Start server
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at: http://localhost:${PORT}`);
   console.log(`📂 Uploads available at: http://localhost:${PORT}/uploads`);
