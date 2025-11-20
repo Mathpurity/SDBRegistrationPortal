@@ -7,7 +7,7 @@ import {
   deleteSchool,
   sendEmail, // ✅ kept intact
 } from "../controllers/adminController.js";
-import protect from "../MiddleWare/AuthMiddleware.js";
+import protect from "../middleware/AuthMiddleware.js";
 
 const router = express.Router();
 
