@@ -64,9 +64,13 @@ app.use(
 app.use("/api/registration", registrationRoutes);
 app.use("/api/admin", adminRoutes);
 
-// 🔹 Serve frontend in production (Vite)
 if (process.env.NODE_ENV === "production") {
-  const frontendDistPath = path.join(__dirname, "../frontend/dist");
+  const frontendBuildPath = path.join(__dirname, "../frontend/build");
+  app.use(express.static(frontendBuildPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, "index.html"));
+  });
+}
 
   // Serve static frontend files
   app.use(express.static(frontendDistPath));
