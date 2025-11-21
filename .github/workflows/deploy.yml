@@ -1,4 +1,4 @@
-name: Deploy to Bluehost via FTP
+name: Deploy Vite Frontend to Bluehost via FTP
 
 on:
   push:
@@ -6,15 +6,33 @@ on:
       - main
 
 jobs:
-  ftp-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
 
-    - name: Upload files to Bluehost
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-      with:
-        server: ${{ secrets.FTP_HOST }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /public_html/
+    steps:
+      # 1️⃣ Checkout the repository
+      - uses: actions/checkout@v3
+
+      # 2️⃣ Install Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Use your Node.js version
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # 4️⃣ Build the Vite project
+      - name: Build frontend
+        run: npm run build
+
+      # 5️⃣ Deploy to Bluehost via FTP
+      - name: Upload build to Bluehost
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist        # Vite build folder
+          remote-dir: /public_html/
