@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repository
+      # 1️⃣ Checkout repository
       - uses: actions/checkout@v3
 
-      # 2️⃣ Install Node.js
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -33,8 +33,8 @@ jobs:
       - name: Upload build to Bluehost
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: frontend/dist     # point to the built folder
-          remote-dir: /public_html/
+          server: ${{ secrets.FTP_HOST }}       # Your FTP host
+          username: ${{ secrets.FTP_USERNAME }} # Your FTP username
+          password: ${{ secrets.FTP_PASSWORD }} # Your FTP password
+          local-dir: frontend/dist               # Vite build folder
+          server-dir: /public_html/             # Destination on server
