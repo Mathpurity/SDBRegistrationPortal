@@ -42,17 +42,9 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ Basic validation for email and phone
-    if (!/\S+@\S+\.\S+/.test(form.email)) {
-      Swal.fire("Invalid Email", "Please enter a valid email address.", "warning");
-      return;
-    }
-
-    if (!/^\d{10,15}$/.test(form.phone)) {
-      Swal.fire("Invalid Phone Number", "Enter a valid phone number (10–15 digits).", "warning");
-      return;
-    }
-
+    // ----------------------
+    // Step 1: Check missing fields first
+    // ----------------------
     const missingFields = Object.entries(form)
       .filter(([key, value]) => !value.trim())
       .map(([key]) => key);
@@ -77,9 +69,29 @@ export default function Register() {
         icon: "warning",
         confirmButtonColor: "#f59e0b",
       });
+      return; // Stop submission if incomplete
+    }
+
+    // ----------------------
+    // Step 2: Validate email and phone only if fields are filled
+    // ----------------------
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      Swal.fire("Invalid Email", "Please enter a valid email address.", "warning");
       return;
     }
 
+    if (!/^\d{10,15}$/.test(form.phone)) {
+      Swal.fire(
+        "Invalid Phone Number",
+        "Enter a valid phone number (10–15 digits).",
+        "warning"
+      );
+      return;
+    }
+
+    // ----------------------
+    // Step 3: Submit form
+    // ----------------------
     const data = new FormData();
     Object.keys(form).forEach((key) => data.append(key, form[key]));
     data.append("logo", logo);
@@ -219,7 +231,6 @@ export default function Register() {
                 className="w-full text-sm sm:text-base"
                 onChange={(e) => handleFileUpload(e, "logo")}
               />
-              {/* ✅ Logo Preview */}
               {logo && (
                 <img
                   src={URL.createObjectURL(logo)}
