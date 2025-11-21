@@ -17,15 +17,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Use your Node.js version
+          node-version: '20'
 
-      # 3️⃣ Install dependencies
+      # 3️⃣ Install dependencies in frontend folder
       - name: Install dependencies
         run: npm install
+        working-directory: frontend
 
       # 4️⃣ Build the Vite project
       - name: Build frontend
         run: npm run build
+        working-directory: frontend
 
       # 5️⃣ Deploy to Bluehost via FTP
       - name: Upload build to Bluehost
@@ -34,5 +36,5 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist        # Vite build folder
+          local-dir: frontend/dist     # point to the built folder
           remote-dir: /public_html/
