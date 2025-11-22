@@ -16,29 +16,29 @@ jobs:
 
       # 2️⃣ Setup Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+      uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: 18
 
-      # 3️⃣ Install dependencies in frontend folder
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
         working-directory: frontend
 
-      # 4️⃣ Build Vite project
-      - name: Build frontend
+      # 4️⃣ Build project
+      - name: Build project
         run: npm run build
         working-directory: frontend
 
-      # 5️⃣ Deploy to Bluehost via FTP
-      - name: Upload build to Bluehost
+      # 5️⃣ Deploy via FTP
+      - name: Deploy to Bluehost via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: "frontend/dist"
-          server-dir: "/public_html/"
+          local-dir: frontend/dist
+          server-dir: /public_html/
           exclude: |
             **/node_modules/**
             **/.git/**
