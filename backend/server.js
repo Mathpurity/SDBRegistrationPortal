@@ -27,18 +27,23 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 // ------------------------
 // Allowed origins for CORS
 // ------------------------
+// ------------------------
+// Allowed origins for CORS (mobile + desktop)
+// ------------------------
 const allowedOrigins = [
-  process.env.FRONTEND_URL, // Production frontend (Bluehost)
+  process.env.FRONTEND_URL,  // Production frontend (Bluehost)
   "http://localhost:5173",   // Vite dev
   "http://localhost:3000",   // Optional dev port
+  "https://sdbregistrationportal.onrender.com" // API server itself
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow Postman or mobile apps
+      // allow requests with no origin (mobile apps, Postman, curl)
+      if (!origin) return callback(null, true);
       if (!allowedOrigins.includes(origin)) {
-        const msg = `❌ The CORS policy for this site does not allow access from the specified Origin.`;
+        const msg = `❌ The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
         return callback(new Error(msg), false);
       }
       return callback(null, true);
@@ -46,6 +51,7 @@ app.use(
     credentials: true,
   })
 );
+
 
 // ------------------------
 // Parse JSON & URL-encoded
