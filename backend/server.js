@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
-import os from "os"; // ES Module import
 import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import registrationRoutes from "./routes/registrationRoutes.js";
@@ -25,26 +24,24 @@ const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // ------------------------
-// Allowed origins for CORS
-// ------------------------
-// ------------------------
-// Allowed origins for CORS (mobile + desktop)
+// CORS
 // ------------------------
 const allowedOrigins = [
-  process.env.FRONTEND_URL,  // Production frontend (Bluehost)
-  "http://localhost:5173",   // Vite dev
-  "http://localhost:3000",   // Optional dev port
-  "https://sdbregistrationportal.onrender.com" // API server itself
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://sdbregistrationportal.onrender.com"
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (mobile apps, Postman, curl)
-      if (!origin) return callback(null, true);
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // mobile apps / postman allowed
       if (!allowedOrigins.includes(origin)) {
-        const msg = `❌ The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-        return callback(new Error(msg), false);
+        return callback(
+          new Error(`CORS blocked: ${origin} not allowed`),
+          false
+        );
       }
       return callback(null, true);
     },
@@ -52,9 +49,8 @@ app.use(
   })
 );
 
-
 // ------------------------
-// Parse JSON & URL-encoded
+// Body parsing
 // ------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -73,7 +69,7 @@ app.use(
 );
 
 // ------------------------
-// Routes
+// API Routes
 // ------------------------
 app.use("/api/registration", registrationRoutes);
 app.use("/api/admin", adminRoutes);
@@ -85,43 +81,46 @@ if (process.env.NODE_ENV === "production") {
   const frontendDistPath = path.join(__dirname, "../frontend/dist");
   app.use(express.static(frontendDistPath));
 
+  // Express 5 compatible fallback route
   app.use((req, res, next) => {
     if (req.method === "GET" && !req.path.startsWith("/api")) {
-      res.sendFile(path.join(frontendDistPath, "index.html"));
-    } else {
-      next();
+      return res.sendFile(path.join(frontendDistPath, "index.html"));
     }
+    next();
   });
 }
+
 
 // ------------------------
 // Root route
 // ------------------------
-app.get("/", (req, res) => res.send("🚀 Server running successfully"));
+app.get("/", (req, res) => {
+  res.send("🚀 Server running successfully");
+});
 
 // ------------------------
-// Uploads test route
+// Uploads check
 // ------------------------
 app.get("/uploads-check", (req, res) => {
-  const host = process.env.NODE_ENV === "production"
-    ? new URL(process.env.VITE_API_URL).host // Render backend host in production
-    : `localhost:${process.env.PORT || 5000}`;
+  const host =
+    process.env.NODE_ENV === "production"
+      ? new URL(process.env.VITE_API_URL).host
+      : `localhost:${process.env.PORT || 5000}`;
 
   res.json({
-    message: "Uploads folder served successfully",
-    uploadsDir,
+    message: "Uploads folder served",
     testImageExample: `http://${host}/uploads/example.png`,
   });
 });
 
 // ------------------------
-// Email test route
+// Email test
 // ------------------------
 app.get("/test-email", async (req, res) => {
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 5000,
+      port: Number(process.env.SMTP_PORT),
       secure: process.env.SMTP_SECURE === "true",
       auth: {
         user: process.env.SMTP_USER,
@@ -132,37 +131,27 @@ app.get("/test-email", async (req, res) => {
     await transporter.sendMail({
       from: process.env.SMTP_USER,
       to: process.env.SMTP_USER,
-      subject: "✅ Vision Africa Email Test",
-      text: "If you received this, your email setup works perfectly!",
+      subject: "Email test",
+      text: "Test email successful",
     });
 
-    res.json({ success: true, message: "✅ Test email sent successfully" });
+    res.json({ success: true });
   } catch (err) {
-    console.error("❌ Email test failed:", err);
-    res.status(500).json({
-      success: false,
-      message: "Email setup failed",
-      error: err.message,
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ------------------------
-// 404 handler
+// 404 Handler
 // ------------------------
-app.use((req, res) => res.status(404).json({ message: "❌ Route not found" }));
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
 // ------------------------
 // Start server
 // ------------------------
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running at: http://localhost:${PORT}`);
-
-  const host = process.env.NODE_ENV === "production"
-    ? new URL(process.env.VITE_API_URL).host
-    : `localhost:${PORT}`;
-
-  console.log(`📂 Uploads available at: http://${host}/uploads`);
 });

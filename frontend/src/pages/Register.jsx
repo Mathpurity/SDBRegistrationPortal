@@ -3,6 +3,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
+import newLogo from "../assets/vision-africa-logo.png"
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -138,75 +139,94 @@ export default function Register() {
     }
   };
 
-  return (
+    return (
     <>
       <div className="flex justify-center items-center min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md sm:max-w-lg lg:max-w-xl bg-white p-6 sm:p-8 shadow-lg rounded-2xl mt-10 mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-blue-700">
+
+          {/* 🔥 Vision Africa Logo */}
+          <div className="flex justify-center mb-4">
+            <img
+              src={newLogo}
+              alt="Vision Africa Logo"
+              className="w-40 sm:w-48 object-contain"
+            />
+          </div>
+
+          {/* Updated Title With New Brand Color */}
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center"
+              style={{ color: "#9b5a33" }}>
             Debate Registration
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-            {/* School Info */}
+            {/* Form Fields */}
             <input
               type="text"
               placeholder="School Name"
-              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
+              style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, schoolName: e.target.value })}
             />
 
             <input
               type="email"
               placeholder="Email"
-              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
+              style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
 
             <input
               type="text"
               placeholder="Phone Number"
-              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
+              style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
 
             <input
               type="text"
               placeholder="School Address"
-              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
+              style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
             />
 
             <input
               type="text"
               placeholder="State"
-              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
+              style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
             />
 
-            {/* Coach Info */}
             <input
               type="text"
               placeholder="Name of Debater Coach"
-              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
+              style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, coachName: e.target.value })}
             />
 
-            {/* Reason for Participation */}
             <textarea
               placeholder="Why do you want to participate in this debate?"
-              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
+              className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
+              style={{ focusRingColor: "#b47a3c" }}
               rows="3"
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
             ></textarea>
 
-            {/* Account Info */}
-            <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200 text-center">
-              <p className="font-semibold text-blue-800 text-sm sm:text-base">
+            {/* Payment Block */}
+            <div className="p-3 sm:p-4 rounded-lg border text-center"
+                  style={{ backgroundColor: "#f2e4d9", borderColor: "#b47a3c" }}>
+              <p className="font-semibold text-sm sm:text-base"
+                  style={{ color: "#9b5a33" }}>
                 PAYMENT DETAILS
               </p>
+
               <p className="text-xs sm:text-sm">
-                Account Name:{" "}
-                <span className="font-medium">Vision Africa Radio</span>
+                Account Name: <span className="font-medium">Vision Africa Radio</span>
               </p>
               <p className="text-xs sm:text-sm">
                 Account Number: <span className="font-medium">4090947228</span>
@@ -216,13 +236,15 @@ export default function Register() {
               </p>
             </div>
 
-            <p className="text-center text-red-600 font-semibold text-xs sm:text-sm mb-2 animate-pulse">
+            <p className="text-center font-semibold text-xs sm:text-sm mb-2 animate-pulse"
+                style={{ color: "#9b5a33" }}>
               ⚠️ No refund after payment!
             </p>
 
-            {/* Upload Logo */}
+            {/* Logo Upload */}
             <div>
-              <label className="block mb-1 font-medium text-sm sm:text-base">
+              <label className="block mb-1 font-medium text-sm sm:text-base"
+                      style={{ color: "#9b5a33" }}>
                 Upload School Logo:
               </label>
               <input
@@ -240,9 +262,10 @@ export default function Register() {
               )}
             </div>
 
-            {/* Upload Receipt */}
+            {/* Receipt Upload */}
             <div>
-              <label className="block mb-1 font-medium text-sm sm:text-base">
+              <label className="block mb-1 font-medium text-sm sm:text-base"
+                      style={{ color: "#9b5a33" }}>
                 Upload Payment Receipt:
               </label>
               <input
@@ -252,26 +275,29 @@ export default function Register() {
                 onChange={(e) => handleFileUpload(e, "receipt")}
               />
               {receipt && (
-                <p className="mt-1 text-sm text-green-600">Receipt file ready ✅</p>
+                <p className="mt-1 text-sm text-green-700">
+                  Receipt file ready ✅
+                </p>
               )}
             </div>
 
-            {/* ✅ Submit Button */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-2 sm:py-3 rounded-xl text-white font-medium text-sm sm:text-base transition ${
-                isSubmitting
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className="w-full py-2 sm:py-3 rounded-xl text-white font-medium text-sm sm:text-base transition"
+              style={{
+                backgroundColor: isSubmitting ? "#bfaea1" : "#9b5a33",
+                cursor: isSubmitting ? "not-allowed" : "pointer"
+              }}
             >
               {isSubmitting ? "Registering..." : "Register"}
             </button>
           </form>
         </div>
       </div>
+
       <Footer />
     </>
-  );
+    );
 }
