@@ -26,22 +26,16 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 // ------------------------
 // CORS
 // ------------------------
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://sdbregistrationportal.onrender.com"
-];
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+  ? process.env.CORS_ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:5173", "http://localhost:3000"];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // mobile apps / postman allowed
+      if (!origin) return callback(null, true); // mobile apps / Postman allowed
       if (!allowedOrigins.includes(origin)) {
-        return callback(
-          new Error(`CORS blocked: ${origin} not allowed`),
-          false
-        );
+        return callback(new Error(`CORS blocked: ${origin} not allowed`), false);
       }
       return callback(null, true);
     },
@@ -78,18 +72,16 @@ app.use("/api/admin", adminRoutes);
 // Serve frontend in production
 // ------------------------
 if (process.env.NODE_ENV === "production") {
-  const frontendDistPath = path.join(__dirname, "../frontend/dist");
+  const frontendDistPath =
+    process.env.FRONTEND_DIST_PATH || path.join(__dirname, "../frontend/dist");
+
   app.use(express.static(frontendDistPath));
 
-  // Express 5 compatible fallback route
-  app.use((req, res, next) => {
-    if (req.method === "GET" && !req.path.startsWith("/api")) {
-      return res.sendFile(path.join(frontendDistPath, "index.html"));
-    }
-    next();
+  // SPA fallback for React Router (all paths except /api/*)
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
   });
 }
-
 
 // ------------------------
 // Root route
