@@ -33,7 +33,8 @@ const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // mobile apps / Postman allowed
+      // Allow mobile apps, Postman, or no-origin requests
+      if (!origin) return callback(null, true);
       if (!allowedOrigins.includes(origin)) {
         return callback(new Error(`CORS blocked: ${origin} not allowed`), false);
       }
@@ -63,30 +64,28 @@ app.use(
 );
 
 // ------------------------
-// Serve frontend in production (SAFE VERSION)
+// API Routes
+// ------------------------
+app.use("/api/registration", registrationRoutes);
+app.use("/api/admin", adminRoutes);
+
+// ------------------------
+// Serve frontend in production
 // ------------------------
 if (process.env.NODE_ENV === "production") {
-  // Absolute path to frontend/dist
   const frontendDistPath = path.join(__dirname, "../frontend/dist");
 
-  console.log("🔍 Checking frontend build folder at:", frontendDistPath);
-
-  // Only serve frontend if folder actually exists
   if (fs.existsSync(frontendDistPath)) {
-    console.log("✅ Frontend build folder found. Serving React app…");
-
+    console.log("✅ Serving frontend from:", frontendDistPath);
     app.use(express.static(frontendDistPath));
 
-    // React Router fallback (all non-API routes)
+    // React Router fallback for all non-API routes
     app.get(/^\/(?!api).*/, (req, res) => {
       res.sendFile(path.join(frontendDistPath, "index.html"));
     });
-
   } else {
-    // Helps you debug Render errors
-    console.warn("❌ FRONTEND BUILD FOLDER NOT FOUND:", frontendDistPath);
-    console.warn("ℹ️ Make sure Render builds the frontend with:");
-    console.warn("   cd frontend && npm install && npm run build");
+    console.warn("❌ Frontend build folder not found:", frontendDistPath);
+    console.warn("ℹ️ Run 'cd frontend && npm install && npm run build' before deploying");
   }
 }
 
