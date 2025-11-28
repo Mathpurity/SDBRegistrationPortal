@@ -1,3 +1,4 @@
+// src/api.js
 import axios from "axios";
 
 // Determine backend URL
@@ -11,7 +12,7 @@ const api = axios.create({
   baseURL: BASE_URL,
 });
 
-// Attach token if exists
+// Automatically attach token if exists
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("adminToken");

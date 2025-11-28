@@ -1,9 +1,9 @@
 import { useState } from "react";
-import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios" // ✅ corrected import
 import Footer from "../components/Footer";
-import newLogo from "../assets/vision-africa-logo.png"
+import newLogo from "../assets/vision-africa-logo.png";
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -20,8 +20,7 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // ✅ 2MB limit
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB limit
 
   const handleFileUpload = (e, type) => {
     const file = e.target.files[0];
@@ -32,7 +31,7 @@ export default function Register() {
         icon: "warning",
         confirmButtonColor: "#f59e0b",
       });
-      e.target.value = ""; // Clear invalid file
+      e.target.value = "";
       return;
     }
 
@@ -43,9 +42,6 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ----------------------
-    // Step 1: Check missing fields first
-    // ----------------------
     const missingFields = Object.entries(form)
       .filter(([key, value]) => !value.trim())
       .map(([key]) => key);
@@ -61,21 +57,14 @@ export default function Register() {
               : ""
           }
           ${!logo ? "<p><strong>Missing:</strong> School Logo upload</p>" : ""}
-          ${
-            !receipt
-              ? "<p><strong>Missing:</strong> Payment Receipt upload</p>"
-              : ""
-          }
+          ${!receipt ? "<p><strong>Missing:</strong> Payment Receipt upload</p>" : ""}
         `,
         icon: "warning",
         confirmButtonColor: "#f59e0b",
       });
-      return; // Stop submission if incomplete
+      return;
     }
 
-    // ----------------------
-    // Step 2: Validate email and phone only if fields are filled
-    // ----------------------
     if (!/\S+@\S+\.\S+/.test(form.email)) {
       Swal.fire("Invalid Email", "Please enter a valid email address.", "warning");
       return;
@@ -90,27 +79,19 @@ export default function Register() {
       return;
     }
 
-    // ----------------------
-    // Step 3: Submit form
-    // ----------------------
     const data = new FormData();
     Object.keys(form).forEach((key) => data.append(key, form[key]));
     data.append("logo", logo);
     data.append("receipt", receipt);
 
     try {
-      setIsSubmitting(true); // 🔒 Disable submit
-      const res = await axios.post(
-        `${API_URL}/api/registration/register`,
-        data,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+      setIsSubmitting(true);
+      const res = await api.post("/registration/register", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       const regNumber =
-        res.data?.data?.regNumber ||
-        res.data?.regNumber ||
-        "Not Assigned Yet";
-
+        res.data?.data?.regNumber || res.data?.regNumber || "Not Assigned Yet";
       localStorage.setItem("regNumber", regNumber);
 
       Swal.fire({
@@ -139,12 +120,10 @@ export default function Register() {
     }
   };
 
-    return (
+  return (
     <>
       <div className="flex justify-center items-center min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md sm:max-w-lg lg:max-w-xl bg-white p-6 sm:p-8 shadow-lg rounded-2xl mt-10 mb-10">
-
-          {/* 🔥 Vision Africa Logo */}
           <div className="flex justify-center mb-4">
             <img
               src={newLogo}
@@ -153,14 +132,14 @@ export default function Register() {
             />
           </div>
 
-          {/* Updated Title With New Brand Color */}
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center"
-              style={{ color: "#9b5a33" }}>
+          <h2
+            className="text-2xl sm:text-3xl font-bold mb-6 text-center"
+            style={{ color: "#9b5a33" }}
+          >
             Debate Registration
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-            {/* Form Fields */}
             <input
               type="text"
               placeholder="School Name"
@@ -168,7 +147,6 @@ export default function Register() {
               style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, schoolName: e.target.value })}
             />
-
             <input
               type="email"
               placeholder="Email"
@@ -176,7 +154,6 @@ export default function Register() {
               style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
-
             <input
               type="text"
               placeholder="Phone Number"
@@ -184,7 +161,6 @@ export default function Register() {
               style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
-
             <input
               type="text"
               placeholder="School Address"
@@ -192,7 +168,6 @@ export default function Register() {
               style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
             />
-
             <input
               type="text"
               placeholder="State"
@@ -200,7 +175,6 @@ export default function Register() {
               style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
             />
-
             <input
               type="text"
               placeholder="Name of Debater Coach"
@@ -208,7 +182,6 @@ export default function Register() {
               style={{ focusRingColor: "#b47a3c" }}
               onChange={(e) => setForm({ ...form, coachName: e.target.value })}
             />
-
             <textarea
               placeholder="Why do you want to participate in this debate?"
               className="w-full p-2 sm:p-3 border rounded-lg focus:ring-2"
@@ -217,14 +190,13 @@ export default function Register() {
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
             ></textarea>
 
-            {/* Payment Block */}
-            <div className="p-3 sm:p-4 rounded-lg border text-center"
-                  style={{ backgroundColor: "#f2e4d9", borderColor: "#b47a3c" }}>
-              <p className="font-semibold text-sm sm:text-base"
-                  style={{ color: "#9b5a33" }}>
+            <div
+              className="p-3 sm:p-4 rounded-lg border text-center"
+              style={{ backgroundColor: "#f2e4d9", borderColor: "#b47a3c" }}
+            >
+              <p className="font-semibold text-sm sm:text-base" style={{ color: "#9b5a33" }}>
                 PAYMENT DETAILS
               </p>
-
               <p className="text-xs sm:text-sm">
                 Account Name: <span className="font-medium">Vision Africa Radio</span>
               </p>
@@ -236,15 +208,15 @@ export default function Register() {
               </p>
             </div>
 
-            <p className="text-center font-semibold text-xs sm:text-sm mb-2 animate-pulse"
-                style={{ color: "#9b5a33" }}>
+            <p
+              className="text-center font-semibold text-xs sm:text-sm mb-2 animate-pulse"
+              style={{ color: "#9b5a33" }}
+            >
               ⚠️ No refund after payment!
             </p>
 
-            {/* Logo Upload */}
             <div>
-              <label className="block mb-1 font-medium text-sm sm:text-base"
-                      style={{ color: "#9b5a33" }}>
+              <label className="block mb-1 font-medium text-sm sm:text-base" style={{ color: "#9b5a33" }}>
                 Upload School Logo:
               </label>
               <input
@@ -262,10 +234,8 @@ export default function Register() {
               )}
             </div>
 
-            {/* Receipt Upload */}
             <div>
-              <label className="block mb-1 font-medium text-sm sm:text-base"
-                      style={{ color: "#9b5a33" }}>
+              <label className="block mb-1 font-medium text-sm sm:text-base" style={{ color: "#9b5a33" }}>
                 Upload Payment Receipt:
               </label>
               <input
@@ -274,21 +244,16 @@ export default function Register() {
                 className="w-full text-sm sm:text-base"
                 onChange={(e) => handleFileUpload(e, "receipt")}
               />
-              {receipt && (
-                <p className="mt-1 text-sm text-green-700">
-                  Receipt file ready ✅
-                </p>
-              )}
+              {receipt && <p className="mt-1 text-sm text-green-700">Receipt file ready ✅</p>}
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isSubmitting}
               className="w-full py-2 sm:py-3 rounded-xl text-white font-medium text-sm sm:text-base transition"
               style={{
                 backgroundColor: isSubmitting ? "#bfaea1" : "#9b5a33",
-                cursor: isSubmitting ? "not-allowed" : "pointer"
+                cursor: isSubmitting ? "not-allowed" : "pointer",
               }}
             >
               {isSubmitting ? "Registering..." : "Register"}
@@ -299,5 +264,5 @@ export default function Register() {
 
       <Footer />
     </>
-    );
+  );
 }
