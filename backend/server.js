@@ -63,24 +63,31 @@ app.use(
 );
 
 // ------------------------
-// API Routes
-// ------------------------
-app.use("/api/registration", registrationRoutes);
-app.use("/api/admin", adminRoutes);
-
-// ------------------------
-// Serve frontend in production
+// Serve frontend in production (SAFE VERSION)
 // ------------------------
 if (process.env.NODE_ENV === "production") {
-  const frontendDistPath =
-    process.env.FRONTEND_DIST_PATH || path.join(__dirname, "../frontend/dist");
+  // Absolute path to frontend/dist
+  const frontendDistPath = path.join(__dirname, "../frontend/dist");
 
-  app.use(express.static(frontendDistPath));
+  console.log("🔍 Checking frontend build folder at:", frontendDistPath);
 
-  // SPA fallback for React Router (all paths except /api/*)
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(frontendDistPath, "index.html"));
-  });
+  // Only serve frontend if folder actually exists
+  if (fs.existsSync(frontendDistPath)) {
+    console.log("✅ Frontend build folder found. Serving React app…");
+
+    app.use(express.static(frontendDistPath));
+
+    // React Router fallback (all non-API routes)
+    app.get(/^\/(?!api).*/, (req, res) => {
+      res.sendFile(path.join(frontendDistPath, "index.html"));
+    });
+
+  } else {
+    // Helps you debug Render errors
+    console.warn("❌ FRONTEND BUILD FOLDER NOT FOUND:", frontendDistPath);
+    console.warn("ℹ️ Make sure Render builds the frontend with:");
+    console.warn("   cd frontend && npm install && npm run build");
+  }
 }
 
 // ------------------------
