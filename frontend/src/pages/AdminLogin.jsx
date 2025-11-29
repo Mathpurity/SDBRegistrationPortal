@@ -2,14 +2,16 @@ import { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-export default function loginAdmin() {
+export default function LoginAdmin() {
   const [form, setForm] = useState({ username: "", password: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await axios.post("http://localhost:5000/api/admin/login", form);
+      // ✅ Use your backend URL
+      const BASE_URL = "https://sdbregistrationportal.onrender.com";
+      const res = await axios.post(`${BASE_URL}/api/admin/login`, form);
 
       // ✅ Show success popup
       Swal.fire({
@@ -19,11 +21,11 @@ export default function loginAdmin() {
         confirmButtonColor: "#2563eb",
       });
 
-      // Optionally save token
+      // ✅ Save token
       localStorage.setItem("adminToken", res.data.token);
 
-      // Redirect to admin dashboard (if you have one)
-      window.location.href = "/admin";
+      // ✅ Redirect to admin dashboard
+      window.location.href = "/admin-dashboard";
     } catch (err) {
       // ❌ Show error popup
       Swal.fire({

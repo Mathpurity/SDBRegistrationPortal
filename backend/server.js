@@ -20,25 +20,33 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, "uploads");
-
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // ------------------------
-// CORS
+// FIX: Auto-detect Render URL
+// ------------------------
+const PUBLIC_URL =
+  process.env.RENDER_EXTERNAL_URL ||
+  process.env.VITE_API_URL ||
+  `http://localhost:${process.env.PORT || 5000}`;
+
+// ------------------------
+// CORS setup
 // ------------------------
 const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
   ? process.env.CORS_ALLOWED_ORIGINS.split(",")
   : ["http://localhost:5173", "http://localhost:3000"];
 
+allowedOrigins.push(PUBLIC_URL); // FIX FOR RENDER FRONTEND
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow mobile apps, Postman, or no-origin requests
-      if (!origin) return callback(null, true);
-      if (!allowedOrigins.includes(origin)) {
-        return callback(new Error(`CORS blocked: ${origin} not allowed`), false);
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
-      return callback(null, true);
+      console.warn(`⚠️ CORS blocked: ${origin}`);
+      return callback(new Error(`CORS blocked: ${origin}`), false);
     },
     credentials: true,
   })
@@ -76,16 +84,11 @@ if (process.env.NODE_ENV === "production") {
   const frontendDistPath = path.join(__dirname, "../frontend/dist");
 
   if (fs.existsSync(frontendDistPath)) {
-    console.log("✅ Serving frontend from:", frontendDistPath);
     app.use(express.static(frontendDistPath));
 
-    // React Router fallback for all non-API routes
     app.get(/^\/(?!api).*/, (req, res) => {
       res.sendFile(path.join(frontendDistPath, "index.html"));
     });
-  } else {
-    console.warn("❌ Frontend build folder not found:", frontendDistPath);
-    console.warn("ℹ️ Run 'cd frontend && npm install && npm run build' before deploying");
   }
 }
 
@@ -100,14 +103,9 @@ app.get("/", (req, res) => {
 // Uploads check
 // ------------------------
 app.get("/uploads-check", (req, res) => {
-  const host =
-    process.env.NODE_ENV === "production"
-      ? new URL(process.env.VITE_API_URL).host
-      : `localhost:${process.env.PORT || 5000}`;
-
   res.json({
     message: "Uploads folder served",
-    testImageExample: `http://${host}/uploads/example.png`,
+    urlExample: `${PUBLIC_URL}/uploads/example.png`,
   });
 });
 
@@ -130,11 +128,12 @@ app.get("/test-email", async (req, res) => {
       from: process.env.SMTP_USER,
       to: process.env.SMTP_USER,
       subject: "Email test",
-      text: "Test email successful",
+      text: "Test successful",
     });
 
     res.json({ success: true });
   } catch (err) {
+    console.error("Email test error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -147,9 +146,17 @@ app.use((req, res) => {
 });
 
 // ------------------------
+// Global error handler
+// ------------------------
+app.use((err, req, res, next) => {
+  console.error("Global error:", err.message);
+  res.status(500).json({ message: err.message });
+});
+
+// ------------------------
 // Start server
 // ------------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at: http://localhost:${PORT}`);
+  console.log(`🚀 Server running on ${PUBLIC_URL}`);
 });
