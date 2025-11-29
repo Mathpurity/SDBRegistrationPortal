@@ -7,7 +7,7 @@ import fs from "fs";
 
 dotenv.config();
 
-const API_URL = process.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = process.env.FRONTEND_URL || "http://localhost:5000";
 
 /* ==============================
    HELPER: Format registration data

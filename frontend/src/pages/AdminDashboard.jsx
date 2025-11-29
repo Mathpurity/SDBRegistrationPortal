@@ -1,17 +1,15 @@
 import { useEffect, useState, useContext } from "react";
-import axios from "axios"; // use axios directly or your axios instance
 import { AdminContext } from "../context/AdminContext";
 import AdminSidebar from "../components/AdminSidebar";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
-  const { schools, setSchools } = useContext(AdminContext);
+  const { schools, setSchools, updateSchoolStatus, deleteSchool } = useContext(AdminContext);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageType, setImageType] = useState("");
   const navigate = useNavigate();
 
-  // ✅ Backend URL
   const BASE_URL = "https://sdbregistrationportal.onrender.com";
 
   // ✅ Protect route
@@ -27,7 +25,7 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
-  // ✅ Auto logout after 5 mins inactivity
+  // ✅ Auto logout after 5 minutes inactivity
   useEffect(() => {
     let logoutTimer;
     const resetTimer = () => {
@@ -37,15 +35,17 @@ export default function AdminDashboard() {
         Swal.fire({
           icon: "info",
           title: "Session Expired",
-          text: "You were logged out due to inactivity.",
+          text: "You were logged out due to 5 minutes of inactivity.",
           confirmButtonColor: "#2563EB",
-        }).then(() => (window.location.href = "/admin-login"));
+        }).then(() => window.location.href = "/admin-login");
       }, 5 * 60 * 1000);
     };
+
     ["mousemove", "keydown", "click", "scroll"].forEach((event) =>
       window.addEventListener(event, resetTimer)
     );
     resetTimer();
+
     return () => {
       clearTimeout(logoutTimer);
       ["mousemove", "keydown", "click", "scroll"].forEach((event) =>
@@ -71,97 +71,7 @@ export default function AdminDashboard() {
     window.location.href = "/admin-login";
   };
 
-  // ✅ Fetch schools
-  useEffect(() => {
-    const fetchSchools = async () => {
-      try {
-        const token = localStorage.getItem("adminToken");
-        if (!token) return;
-
-        const res = await axios.get(`${BASE_URL}/api/admin/schools`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setSchools(Array.isArray(res.data?.data) ? res.data.data : []);
-      } catch (error) {
-        console.error("Error fetching schools:", error.response?.data || error.message);
-        setSchools([]);
-      }
-    };
-    fetchSchools();
-  }, [setSchools]);
-
-  // ✅ Change status
-  const handleStatusChange = async (id, status) => {
-    try {
-      const token = localStorage.getItem("adminToken");
-      if (!token) return;
-
-      const result = await Swal.fire({
-        title: `Change Status`,
-        text: `Are you sure you want to mark this school as "${status}"?`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#16A34A",
-        cancelButtonColor: "#DC2626",
-        confirmButtonText: `Yes, ${status}`,
-      });
-      if (!result.isConfirmed) return;
-
-      await axios.put(`${BASE_URL}/api/admin/schools/status/${id}`, { status }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setSchools((prev) => prev.map((s) => (s._id === id ? { ...s, status } : s)));
-
-      Swal.fire({
-        icon: "success",
-        title: "Updated!",
-        text: `School ${status.toLowerCase()} successfully!`,
-        confirmButtonColor: "#2563EB",
-      });
-    } catch (error) {
-      console.error(error);
-      Swal.fire({ icon: "error", title: "Error!", text: "Failed to update status.", confirmButtonColor: "#DC2626" });
-    }
-  };
-
-  // ✅ Delete school
-  const handleDelete = async (id) => {
-    try {
-      const token = localStorage.getItem("adminToken");
-      if (!token) return;
-
-      const result = await Swal.fire({
-        title: "Delete Confirmation",
-        text: "Are you sure you want to delete this school?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#DC2626",
-        cancelButtonColor: "#6B7280",
-        confirmButtonText: "Yes, Delete",
-      });
-      if (!result.isConfirmed) return;
-
-      await axios.delete(`${BASE_URL}/api/admin/schools/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setSchools((prev) => prev.filter((s) => s._id !== id));
-
-      Swal.fire({
-        icon: "success",
-        title: "Deleted!",
-        text: "School deleted successfully.",
-        confirmButtonColor: "#2563EB",
-      });
-    } catch (error) {
-      console.error(error);
-      Swal.fire({ icon: "error", title: "Error!", text: "Failed to delete school.", confirmButtonColor: "#DC2626" });
-    }
-  };
-
-  // ✅ Helpers
+  // ✅ Fallback images
   const fallbackLogo = "data:image/svg+xml;base64,...";
   const fallbackReceipt = "data:image/svg+xml;base64,...";
 
@@ -172,25 +82,76 @@ export default function AdminDashboard() {
     return `${BASE_URL}/${normalizedPath}`;
   };
 
-  // ✅ Print single school
+  // ✅ Change status
+  const handleStatusChange = async (id, status) => {
+    const result = await Swal.fire({
+      title: `Change Status`,
+      text: `Are you sure you want to mark this school as "${status}"?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#16A34A",
+      cancelButtonColor: "#DC2626",
+      confirmButtonText: `Yes, ${status}`,
+    });
+    if (!result.isConfirmed) return;
+
+    await updateSchoolStatus(id, status);
+    Swal.fire({
+      icon: "success",
+      title: "Updated!",
+      text: `School ${status.toLowerCase()} successfully!`,
+      confirmButtonColor: "#2563EB",
+    });
+  };
+
+  // ✅ Delete school
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Delete Confirmation",
+      text: "Are you sure you want to delete this school? This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#DC2626",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, Delete",
+    });
+    if (!result.isConfirmed) return;
+
+    await deleteSchool(id);
+    Swal.fire({
+      icon: "success",
+      title: "Deleted!",
+      text: "School deleted successfully.",
+      confirmButtonColor: "#2563EB",
+    });
+  };
+
+  // ✅ Print
   const handlePrintSingle = (school) => {
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
         <head>
-          <title>${school.schoolName} Registration</title>
-          <style>body{font-family:Arial;padding:30px;} h2{text-align:center;color:#1e3a8a;} p{margin:12px 0;}</style>
+          <title>School Registration - ${school.schoolName}</title>
+          <style>
+            body { font-family: Arial; padding: 30px; font-size: 16px; }
+            h2 { color: #1e3a8a; text-align: center; }
+            p { margin: 12px 0; }
+            img.logo { width: 120px; display: block; margin: 0 auto 20px; }
+          </style>
         </head>
         <body>
-          <img src="${getFullImageUrl(school.logo, fallbackLogo)}" style="width:120px;display:block;margin:0 auto 20px"/>
+          <img src="${getFullImageUrl(school.logo, fallbackLogo)}" class="logo" alt="School Logo" />
           <h2>Debate Registration Details</h2>
-          <p><strong>Reg No:</strong> ${school.regNumber}</p>
-          <p><strong>School:</strong> ${school.schoolName}</p>
-          <p><strong>Coach:</strong> ${school.coachName}</p>
+          <p><strong>Registration Number:</strong> ${school.regNumber}</p>
+          <p><strong>School Name:</strong> ${school.schoolName}</p>
+          <p><strong>Coach Name:</strong> ${school.coachName}</p>
+          <p><strong>School Address:</strong> ${school.address}</p>
           <p><strong>Email:</strong> ${school.email}</p>
           <p><strong>Phone:</strong> ${school.phone}</p>
           <p><strong>State:</strong> ${school.state}</p>
           <p><strong>Status:</strong> ${school.status}</p>
+          <p><strong>Reason for Participation:</strong> ${school.reason}</p>
         </body>
       </html>
     `);
@@ -201,16 +162,34 @@ export default function AdminDashboard() {
   // ✅ Send Email
   const handleSendEmail = async (school) => {
     try {
-      Swal.fire({ title: "Sending Email...", text: "Please wait", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      await axios.post(`${BASE_URL}/api/admin/send-email`, {
-        email: school.email,
-        subject: "Debate Registration Confirmation",
-        message: `<div>Dear ${school.coachName || "Coach"},<br>Your registration is confirmed.</div>`,
+      Swal.fire({
+        title: "Sending Email...",
+        text: "Please wait while the email is being sent.",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
       });
-      Swal.fire({ icon: "success", title: "Email Sent!", text: `Email sent to ${school.email}`, confirmButtonColor: "#2563EB" });
+
+      const message = `<div>Dear ${school.coachName || "Coach"},<br>Your registration is confirmed.</div>`;
+      await fetch(`${BASE_URL}/api/admin/send-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: school.email, subject: "Debate Competition Registration Confirmation", message }),
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Email Sent!",
+        text: `Email successfully sent to ${school.email}.`,
+        confirmButtonColor: "#2563EB",
+      });
     } catch (error) {
-      console.error(error.response || error.message);
-      Swal.fire({ icon: "error", title: "Error!", text: "Failed to send email.", confirmButtonColor: "#DC2626" });
+      console.error(error);
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Failed to send email.",
+        confirmButtonColor: "#DC2626",
+      });
     }
   };
 
@@ -238,15 +217,20 @@ export default function AdminDashboard() {
             <tbody>
               {schools.length > 0 ? (
                 schools.map((school) => {
-                  const statusLower = school.status?.toLowerCase() || "pending";
+                  const statusLower = school.status?.trim().toLowerCase() || "pending";
                   return (
                     <tr key={school._id} className="border-b text-center hover:bg-gray-50">
                       <td className="p-2 border">{school.regNumber}</td>
                       <td className="p-2 border">
-                        <img src={getFullImageUrl(school.logo, fallbackLogo)} alt="logo"
-                          className="w-12 h-12 mx-auto rounded cursor-pointer hover:scale-110 transition"
-                          onClick={() => { setSelectedImage(getFullImageUrl(school.logo, fallbackLogo)); setImageType("Logo"); }}
+                        <img
+                          src={getFullImageUrl(school.logo, fallbackLogo)}
+                          alt="logo"
                           onError={(e) => (e.target.src = fallbackLogo)}
+                          className="w-12 h-12 mx-auto rounded cursor-pointer hover:scale-110 transition"
+                          onClick={() => {
+                            setSelectedImage(getFullImageUrl(school.logo, fallbackLogo));
+                            setImageType("Logo");
+                          }}
                         />
                       </td>
                       <td className="p-2 border">{school.schoolName || "N/A"}</td>
@@ -254,32 +238,50 @@ export default function AdminDashboard() {
                       <td className="p-2 border">{school.email || "N/A"}</td>
                       <td className="p-2 border">{school.phone || "N/A"}</td>
                       <td className="p-2 border">{school.state || "N/A"}</td>
-                      <td className={`p-2 border font-semibold ${statusLower==="approved"?"text-green-600":statusLower==="disapproved"?"text-red-600":"text-yellow-600"}`}>{school.status}</td>
+                      <td className={`p-2 border font-semibold ${
+                        statusLower === "approved" ? "text-green-600" :
+                        statusLower === "disapproved" ? "text-red-600" :
+                        "text-yellow-600"
+                      }`}>{school.status}</td>
                       <td className="p-2 border">
-                        <button onClick={() => { setSelectedImage(getFullImageUrl(school.receipt, fallbackReceipt)); setImageType("Receipt"); }}
-                                className="text-blue-600 underline">
+                        <button
+                          onClick={() => {
+                            setSelectedImage(getFullImageUrl(school.receipt, fallbackReceipt));
+                            setImageType("Receipt");
+                          }}
+                          className="text-blue-600 underline"
+                        >
                           {school.receipt ? "View" : "No Receipt"}
                         </button>
                       </td>
                       <td className="p-2 border">
                         <div className="flex flex-wrap justify-center gap-2">
-                          {statusLower === "pending" && <>
-                            <button onClick={() => handleStatusChange(school._id, "Approved")} className="bg-green-600 text-white px-2 py-1 rounded">Approve</button>
-                            <button onClick={() => handleStatusChange(school._id, "Disapproved")} className="bg-red-600 text-white px-2 py-1 rounded">Disapprove</button>
-                          </>}
+                          {statusLower === "pending" && (
+                            <>
+                              <button onClick={() => handleStatusChange(school._id, "Approved")} className="bg-green-600 text-white px-2 py-1 rounded">Approve</button>
+                              <button onClick={() => handleStatusChange(school._id, "Disapproved")} className="bg-red-600 text-white px-2 py-1 rounded">Disapprove</button>
+                            </>
+                          )}
                           <button onClick={() => handlePrintSingle(school)} className="bg-gray-700 text-white px-2 py-1 rounded">Print</button>
                           <button onClick={() => handleSendEmail(school)} className="bg-indigo-600 text-white px-2 py-1 rounded">Email</button>
-                          {(statusLower==="approved"||statusLower==="disapproved") && <button onClick={() => handleDelete(school._id)} className="bg-red-700 text-white px-2 py-1 rounded">Delete</button>}
+                          {(statusLower === "approved" || statusLower === "disapproved") && (
+                            <button onClick={() => handleDelete(school._id)} className="bg-red-700 text-white px-2 py-1 rounded">Delete</button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   );
                 })
-              ) : (<tr><td colSpan="10" className="p-4 text-center text-gray-500">No schools registered yet.</td></tr>)}
+              ) : (
+                <tr>
+                  <td colSpan="10" className="p-4 text-center text-gray-500">No schools registered yet.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
+        {/* ✅ Image Preview Modal */}
         {selectedImage && (
           <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
             <div className="bg-white p-4 rounded-lg shadow-lg relative max-w-3xl">
