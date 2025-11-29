@@ -6,12 +6,12 @@ import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
-  const { schools = [], setSchools } = useContext(AdminContext); // ✅ ensure schools is always an array
+  const { schools, setSchools } = useContext(AdminContext);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageType, setImageType] = useState("");
   const navigate = useNavigate();
 
-  // Protect route – redirect if not logged in
+  // ✅ Protect route – redirect if not logged in
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     if (!token) {
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
-  // Auto logout after 5 minutes of inactivity
+  // ✅ Auto logout after 5 minutes of inactivity
   useEffect(() => {
     let logoutTimer;
     const resetTimer = () => {
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // Logout
+  // ✅ Logout Confirmation
   const handleLogout = async () => {
     const result = await Swal.fire({
       title: "Confirm Logout",
@@ -71,19 +71,17 @@ export default function AdminDashboard() {
     window.location.href = "/admin-login";
   };
 
-  const BASE_URL = "https://sdbregistrationportal.onrender.com";
-
-  // ✅ Correct fetch to ensure data is array
+  // ✅ Fetch schools safely
   useEffect(() => {
     const fetchSchools = async () => {
       try {
         const token = localStorage.getItem("adminToken");
-        const res = await axios.get(`${BASE_URL}/api/admin/schools`, {
+        const res = await axios.get("http://localhost:5000/api/admin/schools", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Ensure we always get an array from backend
-        const fetchedSchools = res.data?.data && Array.isArray(res.data.data) ? res.data.data : [];
+        // Ensure schools is always an array
+        const fetchedSchools = Array.isArray(res.data?.data) ? res.data.data : [];
         setSchools(fetchedSchools);
       } catch (error) {
         console.error("Error fetching schools:", error.response?.data || error.message);
@@ -93,7 +91,7 @@ export default function AdminDashboard() {
     fetchSchools();
   }, [setSchools]);
 
-  // Status Change
+  // ✅ Status Change
   const handleStatusChange = async (id, status) => {
     const result = await Swal.fire({
       title: `Change Status`,
@@ -107,7 +105,7 @@ export default function AdminDashboard() {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.put(`${BASE_URL}/api/admin/schools/status/${id}`, { status });
+      await axios.put(`http://localhost:5000/api/admin/schools/status/${id}`, { status });
       setSchools((prev) => prev.map((s) => (s._id === id ? { ...s, status } : s)));
 
       Swal.fire({
@@ -127,7 +125,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Delete School
+  // ✅ Delete School
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: "Delete Confirmation",
@@ -141,7 +139,7 @@ export default function AdminDashboard() {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.delete(`${BASE_URL}/api/admin/schools/${id}`);
+      await axios.delete(`http://localhost:5000/api/admin/schools/${id}`);
       setSchools((prev) => prev.filter((s) => s._id !== id));
 
       Swal.fire({
@@ -161,17 +159,26 @@ export default function AdminDashboard() {
     }
   };
 
-  const fallbackLogo = "data:image/svg+xml;base64,...";
+  // ✅ Fallback images
+  const fallbackLogo = "data:image/svg+xml;base64,..."; // shorted for brevity
   const fallbackReceipt = "data:image/svg+xml;base64,...";
 
-  const getFullImageUrl = (path, fallback) => {
-    if (!path) return fallback;
-    let normalizedPath = path.replace(/\\/g, "/").replace(/^\/+/, "");
-    if (!normalizedPath.startsWith("uploads/")) normalizedPath = `uploads/${normalizedPath}`;
-    return `${BASE_URL}/${normalizedPath}`;
-  };
+ //  Render backend URL
+const BASE_URL = "https://sdbregistrationportal.onrender.com";
 
-  // Print
+const getFullImageUrl = (path, fallback) => {
+  if (!path) return fallback;
+
+  let normalizedPath = path.replace(/\\/g, "/").replace(/^\/+/, "");
+
+  if (!normalizedPath.startsWith("uploads/")) {
+    normalizedPath = `uploads/${normalizedPath}`;
+  }
+
+  return `${BASE_URL}/${normalizedPath}`;
+};
+
+  // ✅ Print
   const handlePrintSingle = (school) => {
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
@@ -204,7 +211,7 @@ export default function AdminDashboard() {
     printWindow.print();
   };
 
-  // Send Email
+  // ✅ Send Email (simplified)
   const handleSendEmail = async (school) => {
     try {
       Swal.fire({
@@ -216,7 +223,7 @@ export default function AdminDashboard() {
 
       const message = `<div>Dear ${school.coachName || "Coach"},<br>Your registration is confirmed.</div>`;
 
-      await axios.post(`${BASE_URL}/api/admin/send-email`, {
+      await axios.post("http://localhost:5000/api/admin/send-email", {
         email: school.email,
         subject: "Debate Competition Registration Confirmation",
         message,
@@ -264,7 +271,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {schools.length > 0 ? (
+              {Array.isArray(schools) && schools.length > 0 ? (
                 schools.map((school) => {
                   const statusLower = school.status?.trim().toLowerCase() || "pending";
                   return (
@@ -287,17 +294,11 @@ export default function AdminDashboard() {
                       <td className="p-2 border">{school.email || "N/A"}</td>
                       <td className="p-2 border">{school.phone || "N/A"}</td>
                       <td className="p-2 border">{school.state || "N/A"}</td>
-                      <td
-                        className={`p-2 border font-semibold ${
-                          statusLower === "approved"
-                            ? "text-green-600"
-                            : statusLower === "disapproved"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                        }`}
-                      >
-                        {school.status}
-                      </td>
+                      <td className={`p-2 border font-semibold ${
+                        statusLower === "approved" ? "text-green-600" :
+                        statusLower === "disapproved" ? "text-red-600" :
+                        "text-yellow-600"
+                      }`}>{school.status}</td>
                       <td className="p-2 border">
                         <button
                           onClick={() => {
@@ -339,8 +340,7 @@ export default function AdminDashboard() {
                           >
                             Email
                           </button>
-                          {(statusLower === "approved" ||
-                            statusLower === "disapproved") && (
+                          {(statusLower === "approved" || statusLower === "disapproved") && (
                             <button
                               onClick={() => handleDelete(school._id)}
                               className="bg-red-700 text-white px-2 py-1 rounded"
@@ -364,6 +364,7 @@ export default function AdminDashboard() {
           </table>
         </div>
 
+        {/* ✅ Image Preview Modal */}
         {selectedImage && (
           <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
             <div className="bg-white p-4 rounded-lg shadow-lg relative max-w-3xl">
