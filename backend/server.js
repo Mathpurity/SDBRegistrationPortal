@@ -79,18 +79,20 @@ app.use("/api/admin", adminRoutes);
 
 // ------------------------
 // Serve frontend in production
-// ------------------------
 if (process.env.NODE_ENV === "production") {
   const frontendDistPath = path.join(__dirname, "../frontend/dist");
 
   if (fs.existsSync(frontendDistPath)) {
     app.use(express.static(frontendDistPath));
 
+    // ✅ Catch-all route for React Router (all non-API routes)
     app.get(/^\/(?!api).*/, (req, res) => {
       res.sendFile(path.join(frontendDistPath, "index.html"));
     });
   }
 }
+
+
 
 // ------------------------
 // Root route
