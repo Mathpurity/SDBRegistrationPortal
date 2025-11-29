@@ -23,7 +23,7 @@ export default function Register() {
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB limit
 
   // 🚀 Correct live backend URL
-  const API_URL = import.meta.env.VITE_API_URL || "https://sdbregistrationportal.onrender.com";
+  const API_URL = import.meta.env.FRONTEND_URL || "https://sdbregistrationportal.onrender.com";
 
   const handleFileUpload = (e, type) => {
     const file = e.target.files[0];

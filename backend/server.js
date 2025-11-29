@@ -27,7 +27,7 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 // ------------------------
 const PUBLIC_URL =
   process.env.RENDER_EXTERNAL_URL ||
-  process.env.VITE_API_URL ||
+  process.env.FRONTEND_URL ||
   `http://localhost:${process.env.PORT || 5000}`;
 
 // ------------------------
