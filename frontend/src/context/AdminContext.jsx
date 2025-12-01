@@ -7,12 +7,11 @@ export const AdminProvider = ({ children }) => {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const BASE_URL = "https://sdbregistrationportal.onrender.com";
+  // Backend host (Render). If deploying locally change accordingly.
+  const BASE_URL = process.env.REACT_APP_API_URL || "https://sdbregistrationportal.onrender.com";
 
-  // Helper to get token safely
   const getToken = () => localStorage.getItem("adminToken");
 
-  // ✅ Fetch all registered schools
   const fetchSchools = async () => {
     try {
       setLoading(true);
@@ -22,13 +21,12 @@ export const AdminProvider = ({ children }) => {
         setSchools([]);
         return;
       }
-
       const res = await axios.get(`${BASE_URL}/api/admin/schools`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const fetchedSchools = Array.isArray(res.data?.data) ? res.data.data : [];
-      setSchools(fetchedSchools);
+      const fetched = Array.isArray(res.data?.data) ? res.data.data : [];
+      setSchools(fetched);
     } catch (error) {
       console.error("Error fetching schools:", error.response?.data || error.message);
       setSchools([]);
@@ -37,63 +35,42 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // ✅ Approve / Confirm a school
-  const approveSchool = async (id) => {
-    try {
-      const token = getToken();
-      if (!token) throw new Error("Admin token missing");
-
-      await axios.put(
-        `${BASE_URL}/api/registration/confirm/${id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setSchools((prev) =>
-        prev.map((s) => (s._id === id ? { ...s, status: "Confirmed" } : s))
-      );
-    } catch (error) {
-      console.error("Error approving school:", error.response?.data || error.message);
-    }
-  };
-
-  // ✅ Update school status
   const updateSchoolStatus = async (id, status) => {
     try {
       const token = getToken();
-      if (!token) throw new Error("Admin token missing");
-
-      await axios.put(
-        `${BASE_URL}/api/admin/schools/status/${id}`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setSchools((prev) =>
-        prev.map((s) => (s._id === id ? { ...s, status } : s))
-      );
+      await axios.put(`${BASE_URL}/api/admin/schools/status/${id}`, { status }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSchools((prev) => prev.map((s) => (s._id === id ? { ...s, status } : s)));
     } catch (error) {
       console.error("Error updating school status:", error.response?.data || error.message);
     }
   };
 
-  // ✅ Delete a school
   const deleteSchool = async (id) => {
     try {
       const token = getToken();
-      if (!token) throw new Error("Admin token missing");
-
       await axios.delete(`${BASE_URL}/api/admin/schools/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setSchools((prev) => prev.filter((s) => s._id !== id));
     } catch (error) {
       console.error("Error deleting school:", error.response?.data || error.message);
     }
   };
 
-  // ✅ Global axios interceptor for 401 (expired / invalid token)
+  const sendEmail = async (email, subject, message) => {
+    try {
+      const token = getToken();
+      await axios.post(`${BASE_URL}/api/admin/send-email`, { email, subject, message }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error("Error sending email:", error.response?.data || error.message);
+    }
+  };
+
+  // intercept 401 globally (optional)
   axios.interceptors.response.use(
     (res) => res,
     (err) => {
@@ -105,23 +82,15 @@ export const AdminProvider = ({ children }) => {
     }
   );
 
-  // Fetch schools on mount
   useEffect(() => {
     fetchSchools();
   }, []);
 
   return (
-    <AdminContext.Provider
-      value={{
-        schools,
-        setSchools,
-        loading,
-        fetchSchools,
-        approveSchool,
-        updateSchoolStatus,
-        deleteSchool,
-      }}
-    >
+    <AdminContext.Provider value={{
+      schools, setSchools, loading, fetchSchools,
+      updateSchoolStatus, deleteSchool, sendEmail
+    }}>
       {children}
     </AdminContext.Provider>
   );
