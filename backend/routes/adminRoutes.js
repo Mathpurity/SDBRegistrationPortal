@@ -17,9 +17,6 @@ router.post("/login", loginAdmin);
 // Protected admin routes
 router.get("/registrations", protect, getAllRegistration);
 
-// Correct schools route (previously wrong)
-router.get("/schools", protect, getAllSchools);
-
 router.put("/confirm/:id", protect, confirmPayment);
 
 router.put("/schools/status/:id", protect, updateSchoolStatus);
