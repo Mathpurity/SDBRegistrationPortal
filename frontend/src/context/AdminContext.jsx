@@ -8,7 +8,7 @@ export const AdminProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
 
   // Backend host (Render). If deploying locally change accordingly.
-  const BASE_URL = process.env.REACT_APP_API_URL || "https://sdbregistrationportal.onrender.com";
+  const BASE_URL = import.meta.env.RENDER_EXTERNAL_URL || "https://sdbregistrationportal.onrender.com";
 
   const getToken = () => localStorage.getItem("adminToken");
 
@@ -21,7 +21,8 @@ export const AdminProvider = ({ children }) => {
         setSchools([]);
         return;
       }
-      const res = await axios.get(`${BASE_URL}/api/admin/schools`, {
+      const res = await axios.get(`${BASE_URL}/https://sdbregistrationportal.onrender.com/api/admin/schools
+`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -38,7 +39,8 @@ export const AdminProvider = ({ children }) => {
   const updateSchoolStatus = async (id, status) => {
     try {
       const token = getToken();
-      await axios.put(`${BASE_URL}/api/admin/schools/status/${id}`, { status }, {
+      await axios.put(`${BASE_URL}https://sdbregistrationportal.onrender.com/api/admin/schools
+/status/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSchools((prev) => prev.map((s) => (s._id === id ? { ...s, status } : s)));

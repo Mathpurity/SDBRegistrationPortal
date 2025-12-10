@@ -6,7 +6,7 @@ import fs from "fs";
 
 dotenv.config();
 
-const FRONTEND_URL = process.env.VITE_API_URL || process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || "";
+const FRONTEND_URL = process.env.FRONTEND_URL || process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL || "";
 
 /** return absolute URL for uploads stored like "/uploads/filename" or "uploads/filename" */
 const getPublicUrl = (filePath) => {
