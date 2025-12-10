@@ -21,8 +21,7 @@ export const AdminProvider = ({ children }) => {
         setSchools([]);
         return;
       }
-      const res = await axios.get(`${BASE_URL}/https://sdbregistrationportal.onrender.com/api/admin/schools
-`, {
+      const res = await axios.get(`${BASE_URL}/api/admin/schools`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -39,8 +38,7 @@ export const AdminProvider = ({ children }) => {
   const updateSchoolStatus = async (id, status) => {
     try {
       const token = getToken();
-      await axios.put(`${BASE_URL}https://sdbregistrationportal.onrender.com/api/admin/schools
-/status/${id}`, { status }, {
+      await axios.put(`${BASE_URL}/api/admin/schools/status/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSchools((prev) => prev.map((s) => (s._id === id ? { ...s, status } : s)));
