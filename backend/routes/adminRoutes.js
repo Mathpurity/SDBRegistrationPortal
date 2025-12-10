@@ -6,7 +6,6 @@ import {
   updateSchoolStatus,
   deleteSchool,
   sendEmail,
-  getAllSchools,
 } from "../controllers/adminController.js";
 import protect from "../MiddleWare/AuthMiddleware.js";
 
