@@ -6,10 +6,10 @@ export const AdminContext = createContext();
 export const AdminProvider = ({ children }) => {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null); // track errors for UI
+  const [error, setError] = useState(null);
 
   const BASE_URL =
-    import.meta.env.RENDER_EXTERNAL_URL || "https://sdbregistrationportal.onrender.com";
+    import.meta.env.VITE_RENDER_EXTERNAL_URL || "https://sdbregistrationportal.onrender.com";
 
   const getToken = () => localStorage.getItem("adminToken");
 
@@ -19,22 +19,20 @@ export const AdminProvider = ({ children }) => {
 
     const token = getToken();
     if (!token) {
-      // Optional: show message in UI instead of console
-      setError("Admin not logged in. Please login to fetch schools.");
+      setError("Admin not logged in. Please login.");
       setSchools([]);
       setLoading(false);
       return;
     }
 
     try {
-      const res = await axios.get(`${BASE_URL}/api/admin/schools`, {
+      const res = await axios.get(`${BASE_URL}/api/admin/registrations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const fetched = Array.isArray(res.data?.data) ? res.data.data : [];
-      setSchools(fetched);
+      setSchools(Array.isArray(res.data?.data) ? res.data.data : []);
     } catch (err) {
       console.error("Error fetching schools:", err.response?.data || err.message);
-      setError("Failed to fetch schools. Check your network or login session.");
+      setError(err.response?.data?.message || "Failed to fetch schools.");
       setSchools([]);
     } finally {
       setLoading(false);
@@ -45,13 +43,15 @@ export const AdminProvider = ({ children }) => {
     try {
       const token = getToken();
       if (!token) throw new Error("Admin not logged in.");
-      await axios.put(`${BASE_URL}/api/admin/schools/status/${id}`, { status }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSchools((prev) => prev.map((s) => (s._id === id ? { ...s, status } : s)));
+      const res = await axios.put(
+        `${BASE_URL}/api/admin/schools/status/${id}`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSchools((prev) => prev.map((s) => (s._id === id ? res.data.data : s)));
     } catch (err) {
       console.error("Error updating school status:", err.response?.data || err.message);
-      setError("Failed to update school status.");
+      setError(err.response?.data?.message || "Failed to update school status.");
     }
   };
 
@@ -65,7 +65,7 @@ export const AdminProvider = ({ children }) => {
       setSchools((prev) => prev.filter((s) => s._id !== id));
     } catch (err) {
       console.error("Error deleting school:", err.response?.data || err.message);
-      setError("Failed to delete school.");
+      setError(err.response?.data?.message || "Failed to delete school.");
     }
   };
 
@@ -73,42 +73,49 @@ export const AdminProvider = ({ children }) => {
     try {
       const token = getToken();
       if (!token) throw new Error("Admin not logged in.");
-      await axios.post(`${BASE_URL}/api/admin/send-email`, { email, subject, message }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(
+        `${BASE_URL}/api/admin/send-email`,
+        { email, subject, message },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     } catch (err) {
       console.error("Error sending email:", err.response?.data || err.message);
-      setError("Failed to send email.");
+      setError(err.response?.data?.message || "Failed to send email.");
     }
   };
 
   // Global 401 interceptor
-  axios.interceptors.response.use(
-    (res) => res,
-    (err) => {
-      if (err.response?.status === 401) {
-        localStorage.removeItem("adminToken");
-        window.location.href = "/admin-login";
-      }
-      return Promise.reject(err);
-    }
-  );
-
   useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (res) => res,
+      (err) => {
+        if (err.response?.status === 401) {
+          localStorage.removeItem("adminToken");
+          window.location.href = "/admin-login";
+        }
+        return Promise.reject(err);
+      }
+    );
+
     fetchSchools();
+
+    return () => axios.interceptors.response.eject(interceptor);
   }, []);
 
   return (
-    <AdminContext.Provider value={{
-      schools,
-      setSchools,
-      loading,
-      error,
-      fetchSchools,
-      updateSchoolStatus,
-      deleteSchool,
-      sendEmail
-    }}>
+    <AdminContext.Provider
+      value={{
+        schools,
+        setSchools,
+        loading,
+        error,
+        fetchSchools,
+        updateSchoolStatus,
+        deleteSchool,
+        sendEmail,
+        setError,
+      }}
+    >
       {children}
     </AdminContext.Provider>
   );
