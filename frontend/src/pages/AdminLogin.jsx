@@ -15,12 +15,7 @@ export default function LoginAdmin() {
         import.meta.env.RENDER_EXTERNAL_URL ||
         "https://sdbregistrationportal.onrender.com";
 
-      console.log("🌍 Using API Base URL:", BASE_URL);
-      console.log("📤 Sending login request with:", form);
-
       const res = await axios.post(`${BASE_URL}/api/admin/login`, form);
-
-      console.log("✅ Login response:", res.data);
 
       Swal.fire({
         icon: "success",
@@ -32,34 +27,21 @@ export default function LoginAdmin() {
       localStorage.setItem("adminToken", res.data.token);
       window.location.href = "/admin-dashboard";
     } catch (err) {
-      console.error("❌ Login error:", err);
+      let message;
 
-      let title = "Login Failed";
-      let message = "An unexpected error occurred. Please try again.";
-      let icon = "error";
-
-      if (err.response) {
-        // Server responded with status outside 2xx
-        console.warn("⚠️ Server response:", err.response.data);
-
-        if (err.response.status === 401) {
-          message = "Incorrect username or password. Please check your credentials.";
-          icon = "warning";
-        } else {
-          message = `Server error: ${err.response.data?.message || err.response.statusText}`;
-        }
+      if (err.response?.status === 401) {
+        message = "Incorrect username or password. Please try again.";
+      } else if (err.response) {
+        message = `Server error: ${err.response.data?.message || err.response.statusText}`;
       } else if (err.request) {
-        // Request made but no response received
-        console.warn("⚠️ No response received. Request details:", err.request);
-        message = "Network error: Unable to reach the server. Please check your connection.";
-        icon = "info";
+        message = "Network error: Unable to reach the server.";
       } else {
         message = `Error: ${err.message}`;
       }
 
       Swal.fire({
-        icon,
-        title,
+        icon: "error",
+        title: "Login Failed",
         text: message,
         confirmButtonColor: "#dc2626",
       });
