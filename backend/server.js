@@ -23,7 +23,7 @@ const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // ------------------------
-// Public URL
+// Public URL (used for logs / example links)
 // ------------------------
 const PUBLIC_URL =
   process.env.RENDER_EXTERNAL_URL ||
@@ -59,7 +59,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // ------------------------
 // Serve uploads (public)
-// ------------------------
 app.use(
   "/uploads",
   (req, res, next) => {
@@ -77,13 +76,14 @@ app.use("/api/registration", registrationRoutes);
 app.use("/api/admin", adminRoutes);
 
 // ------------------------
-// Serve frontend static files
+// Serve frontend build correctly
 // ------------------------
 const frontendDist = path.join(__dirname, "../frontend/dist");
+
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
 
-  // Catch-all for SPA routes (non-API)
+  // Catch-all for non-API routes
   app.get(/^\/(?!api).*/, (req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
@@ -94,24 +94,35 @@ if (fs.existsSync(frontendDist)) {
 }
 
 // ------------------------
-// Root route (optional)
+// Root route (API quick test)
 app.get("/", (req, res) => {
   res.send("🚀 Backend API running successfully");
 });
 
 // ------------------------
-// Email test (optional)
+// Uploads check
+app.get("/uploads-check", (req, res) => {
+  res.json({
+    message: "Uploads folder served",
+    urlExample: `${PUBLIC_URL}/uploads/example.png`,
+  });
+});
+
+// ------------------------
+// Email test
 app.get("/test-email", async (req, res) => {
   try {
     if (!process.env.SMTP_HOST) {
       return res.status(500).json({ success: false, error: "SMTP not configured" });
     }
-
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
       secure: process.env.SMTP_SECURE === "true",
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
     });
 
     await transporter.sendMail({
@@ -129,21 +140,25 @@ app.get("/test-email", async (req, res) => {
 });
 
 // ------------------------
-// 404 Handler (API)
-app.use("/api/*", (req, res) => {
-  res.status(404).json({ message: "API route not found" });
+// 404 Handler
+app.use((req, res) => {
+  const accept = req.headers.accept || "";
+  if (accept.includes("text/html") && fs.existsSync(frontendDist)) {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  } else {
+    res.status(404).json({ message: "Route not found" });
+  }
 });
 
 // ------------------------
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error("Global error:", err?.message || err);
+  console.error("Global error:", err && err.message ? err.message : err);
   res.status(500).json({ message: err?.message || "Server error" });
 });
 
 // ------------------------
 // Start server
-// ------------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Backend API running on ${PUBLIC_URL} (port ${PORT})`);
