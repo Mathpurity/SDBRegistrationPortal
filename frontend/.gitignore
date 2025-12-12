@@ -7,9 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Ignore ONLY root dist, not frontend/dist or backend/dist
+/dist
+
+# Vite SSR dist
 dist-ssr
+
 *.local
 
 # Editor directories and files
