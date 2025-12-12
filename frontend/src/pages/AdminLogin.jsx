@@ -11,9 +11,10 @@ export default function LoginAdmin() {
     setLoading(true);
 
     try {
-      const BASE_URL =
-        import.meta.env.RENDER_EXTERNAL_URL ||
-        "https://sdbregistrationportal.onrender.com";
+        const BASE_URL =
+          import.meta.env.VITE_RENDER_EXTERNAL_URL ||
+          "https://sdbregistrationportal.onrender.com";
+
 
       const res = await axios.post(`${BASE_URL}/api/admin/login`, form);
 
