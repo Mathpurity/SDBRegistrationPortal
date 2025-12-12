@@ -76,6 +76,14 @@ app.use(
 app.use("/api/registration", registrationRoutes);
 app.use("/api/admin", adminRoutes);
 
+// Serve static frontend
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+// Catch-all route (AFTER the static middleware)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+});
+
 // ------------------------
 // Serve frontend if build exists
 // Priority: backend/dist (if you copy frontend build there) then ../frontend/dist
