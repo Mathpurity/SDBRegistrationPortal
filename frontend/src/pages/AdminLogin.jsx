@@ -6,18 +6,24 @@ export default function LoginAdmin() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
 
+  // ✅ Safe fallback for backend URL
+  const getBaseUrl = () => {
+    try {
+      return import.meta.env.VITE_RENDER_EXTERNAL_URL || "https://sdbregistrationportal.onrender.com";
+    } catch {
+      return "https://sdbregistrationportal.onrender.com";
+    }
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default page refresh
     setLoading(true);
 
     try {
-        const BASE_URL =
-          import.meta.env.VITE_RENDER_EXTERNAL_URL ||
-          "https://sdbregistrationportal.onrender.com";
-
-
+      const BASE_URL = getBaseUrl();
       const res = await axios.post(`${BASE_URL}/api/admin/login`, form);
 
+      // Successful login
       Swal.fire({
         icon: "success",
         title: "Login Successful 🎉",
@@ -28,7 +34,8 @@ export default function LoginAdmin() {
       localStorage.setItem("adminToken", res.data.token);
       window.location.href = "/admin-dashboard";
     } catch (err) {
-      let message;
+      // Determine error message
+      let message = "An unexpected error occurred. Please try again.";
 
       if (err.response?.status === 401) {
         message = "Incorrect username or password. Please try again.";
@@ -36,7 +43,7 @@ export default function LoginAdmin() {
         message = `Server error: ${err.response.data?.message || err.response.statusText}`;
       } else if (err.request) {
         message = "Network error: Unable to reach the server.";
-      } else {
+      } else if (err.message) {
         message = `Error: ${err.message}`;
       }
 
@@ -62,6 +69,7 @@ export default function LoginAdmin() {
             type="text"
             placeholder="Username"
             className="w-full p-2 mb-3 border rounded"
+            value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
             required
             disabled={loading}
@@ -70,6 +78,7 @@ export default function LoginAdmin() {
             type="password"
             placeholder="Password"
             className="w-full p-2 mb-3 border rounded"
+            value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required
             disabled={loading}
